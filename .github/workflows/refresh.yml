@@ -1,0 +1,62 @@
+name: Weekly Refresh
+
+on:
+  schedule:
+    # Monday 7:00 AM Central = 12:00 UTC (CDT) / 13:00 UTC (CST).
+    # GitHub Actions only supports UTC; this fires at 12:00 UTC year-round.
+    # During CST months the post will arrive at 6am CT — acceptable for v1.
+    - cron: "0 12 * * 1"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Skip deploy and Slack (true/false)"
+        required: false
+        default: "false"
+      dummy_data:
+        description: "Use fixtures instead of live APIs (true/false)"
+        required: false
+        default: "false"
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write          # needed to push to gh-pages branch
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run pipeline
+        env:
+          GA4_PROPERTY_CPI: ${{ secrets.GA4_PROPERTY_CPI }}
+          GA4_PROPERTY_WELLSPRING: ${{ secrets.GA4_PROPERTY_WELLSPRING }}
+          GA4_SERVICE_ACCOUNT_JSON: ${{ secrets.GA4_SERVICE_ACCOUNT_JSON }}
+          GADS_CUSTOMER_ID: ${{ secrets.GADS_CUSTOMER_ID }}
+          GADS_DEVELOPER_TOKEN: ${{ secrets.GADS_DEVELOPER_TOKEN }}
+          GADS_REFRESH_TOKEN: ${{ secrets.GADS_REFRESH_TOKEN }}
+          GSHEETS_SA_JSON: ${{ secrets.GSHEETS_SA_JSON }}
+          PERFORMANCE_SUMMARY_SHEET_ID: ${{ secrets.PERFORMANCE_SUMMARY_SHEET_ID }}
+          SLACK_CPI_WEBHOOK: ${{ secrets.SLACK_CPI_WEBHOOK }}
+        run: |
+          ARGS=""
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then ARGS="$ARGS --dry-run"; fi
+          if [ "${{ github.event.inputs.dummy_data }}" = "true" ]; then ARGS="$ARGS --dummy-data"; fi
+          python scripts/run_pipeline.py $ARGS
+
+      - name: Upload snapshot artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: snapshots-${{ github.run_id }}
+          path: store/snapshots/
+          retention-days: 30

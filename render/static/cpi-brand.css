@@ -1,0 +1,39 @@
+/*
+  CPI Health Dashboard — Brand Styles
+
+  Port the inline <style> block from /mnt/user-data/outputs/dashboard_overview.html
+  into this file when building out the render layer. The CSS variables match
+  the cpi-brand skill exactly. Single source of truth across overview, market,
+  channel, and market × channel templates.
+
+  Sections that already exist in the mockup (copy in this order):
+    1. :root variables (CPI Blue, Charcoal, etc.)
+    2. Reset + body
+    3. .container, .header, .header-logo, .header-info, .header-meta
+    4. .section-label
+    5. .kpi-strip, .kpi-card, .kpi-card.hero, .kpi-label, .kpi-value, .kpi-foot
+    6. .info-badge
+    7. .secondary-strip, .secondary-card
+    8. .panel, .panel-title, .panel-sub
+    9. .composition-grid, .comp-row, .comp-bar-track, .comp-bar-fill (t2, t3, t4)
+    10. .self-ref-summary
+    11. .chart-wrap, .grid-2
+    12. .data-table (header, body, total-row, tbd-row)
+    13. .breadcrumb (new — for detail pages)
+    14. .tbd-banner (new — for Minnesota and any TBD intersection pages)
+    15. .footer (.footer-meth, .footer-credit)
+    16. .main
+*/
+
+:root {
+  --cpi-blue: #00477E;
+  --charcoal: #404243;
+  --light-blue: #E8F0F7;
+  --mid-blue: #C5D8EC;
+  --steel: #8FA8C0;
+  --off-white: #F4F4F4;
+  --light-gray: #CCCCCC;
+  --white: #FFFFFF;
+}
+
+/* TODO: paste the rest from the mockup */

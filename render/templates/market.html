@@ -1,0 +1,62 @@
+{# Market detail template — one HTML page per market.
+
+   Generated at: /markets/{market.id}.html
+
+   Variables expected:
+     - market: the market dict from config['markets']
+     - kpis: market-scoped KPI subset
+     - config, quality, period_label
+#}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CPI Health — {{ market.label }}</title>
+  <link rel="stylesheet" href="/static/cpi-brand.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+  {% include "partials/header.html" %}
+
+  <div class="container main">
+
+    {# Breadcrumb #}
+    <nav class="breadcrumb">
+      <a href="/">Overview</a> &raquo; <span>{{ market.label }}</span>
+    </nav>
+
+    {% if market.status == "tbd" %}
+      <div class="tbd-banner">
+        <h2>{{ market.label }} — Data integration pending</h2>
+        <p>This market is on the roadmap. Cards and panels will populate once data flows are established.</p>
+      </div>
+    {% else %}
+
+      {# Topline KPI strip — same 5 cards as overview, market-scoped #}
+      <div class="kpi-strip">
+        {% for kpi in config.kpis.topline %}
+          {% include "partials/kpi_card.html" %}
+        {% endfor %}
+      </div>
+
+      {# Self-referral composition for this market #}
+      {% include "partials/self_referral_composition.html" %}
+
+      {# Channel mix + funnel waterfall + weekly trend for this market #}
+      {% include "partials/channel_mix.html" %}
+      {% include "partials/funnel_waterfall.html" %}
+      {% include "partials/weekly_trend.html" %}
+
+      {# Channel breakdown table → links to /detail/{market}--{channel}.html #}
+      {% include "partials/channel_breakdown_table.html" %}
+
+    {% endif %}
+
+    {% include "partials/footer.html" %}
+
+  </div>
+
+</body>
+</html>

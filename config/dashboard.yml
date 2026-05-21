@@ -1,0 +1,356 @@
+# =============================================================================
+# CPI Health — Dashboard Configuration
+# =============================================================================
+# This file is the contract between the pipeline and the dashboard.
+# Every metric, market, channel, and view in here must be supported end-to-end.
+# Adding things here without code changes works for: markets, channels,
+# secondary metrics, quality check thresholds, trend window length, cadence.
+# Code changes needed for: new data sources, new transform steps, new chart types.
+
+dashboard:
+  client: cpi-health
+  version: 0.1-prototype
+  audience: internal
+  cadence:
+    primary: weekly        # weekly | monthly. Drives default views and trend grain.
+    secondary: monthly     # Generated if data supports it.
+  trend_window: 13         # Periods, units = primary cadence.
+  refresh:
+    day: monday
+    time_ct: "07:00"
+  brand_tokens: render/static/cpi-brand.css
+
+# -----------------------------------------------------------------------------
+# ASSUMPTIONS — surfaced in dashboard footer, never hidden
+# -----------------------------------------------------------------------------
+assumptions:
+  revenue_per_new_patient: 3500
+  roi_formula: "(new_patients * revenue_per_new_patient - all_in_cost) / all_in_cost"
+  cost_inclusions:
+    - media_spend          # Google Ads media only
+    - agency_fees          # Fillungo monthly retainer
+  # Note: partner costs (Evan) intentionally excluded — see docs/architecture.md
+  # CONFIRM WITH SCOTT: retainer figure and split below drive all_in_cost in
+  # transform/join_costs.py. The $22,850 is the retainer net of partner cost.
+  agency_fee_monthly: 22850
+  agency_fee_channel_split:           # how the retainer is allocated across channels
+    paid_search: 0.60
+    organic: 0.40
+  weeks_per_month: 4.33               # for prorating the monthly fee to weekly periods
+  attribution_method: proportional_from_online_leads
+  attribution_footnote: |
+    Channel attribution for new patients is modeled proportionally from online
+    lead share. Direct intake source data is not yet captured at the patient
+    level — improving this is a near-term priority.
+  self_referral_footnote: |
+    Self-referral source categories are based on patient self-report at intake
+    and may understate or miscategorize true source. Categories are harmonized
+    across markets where intake systems differ.
+
+# -----------------------------------------------------------------------------
+# KPIs — topline cards in display order
+# -----------------------------------------------------------------------------
+kpis:
+  topline:
+    - id: roi
+      label: ROI
+      format: percent
+      hero: true
+      footnote_ref: roi_formula
+    - id: online_new_patients
+      label: Online NPs
+      format: integer
+    - id: online_pct_of_self_referrals
+      label: Online % of Self-Refs
+      format: percent
+      formula: online_nps / self_referral_nps
+    - id: self_referrals_pct_of_total
+      label: Self-Refs % of Total
+      format: percent
+      formula: self_referral_nps / total_nps
+    - id: cost_per_online_new_patient
+      label: Cost per Online NP
+      format: currency
+      formula: all_in_cost / online_nps
+      footnote_ref: cost_inclusions
+
+  secondary:
+    - id: marketing_profitability
+      label: Marketing Profitability
+      format: currency
+      formula: (online_nps * revenue_per_new_patient) - all_in_cost
+    - id: total_leads
+      label: Total Leads
+      format: integer
+    - id: blended_cpl
+      label: Blended CPL
+      format: currency
+      benchmark: 66.02
+      benchmark_label: "vs $66.02 healthcare avg"
+
+# -----------------------------------------------------------------------------
+# NEW PATIENT TAXONOMY — the Rupal lens
+# -----------------------------------------------------------------------------
+new_patient_taxonomy:
+  total_new_patients:
+    children:
+      - id: self_referrals
+        children:
+          - id: online
+            sources_from: [ga4, google_ads, intake_self_report]
+          - id: wom_friends_family
+            label: "WOM / Friends & Family"
+          - id: direct_phone
+            label: "Direct / Phone"
+          - id: other_self_ref
+            label: "Other"
+      - id: physician_referrals
+        scope: out_of_marketing_scope_but_in_denominator
+
+# -----------------------------------------------------------------------------
+# MARKETS — order matters for substring matching (Ohio before Colorado)
+# -----------------------------------------------------------------------------
+markets:
+  - id: kentucky
+    label: Kentucky
+    match: [KY, Louisville, Lexington]
+  - id: ohio                        # MUST precede colorado
+    label: Ohio
+    match: [OH, Columbus, Pickerington, "New Albany"]
+    notes: "Fillungo-managed campaigns only; R55 pilot tracked separately"
+  - id: colorado
+    label: Colorado
+    match: [CO, Denver]
+  - id: texas
+    label: Texas
+    match: [TX, Austin]
+  - id: indiana
+    label: Indiana
+    brand: "Wellspring Pain Solutions"
+    ga4_property_ref: wellspring
+    match: [IN, Indianapolis]
+  - id: minnesota
+    label: Minnesota
+    brand: "Nuro"
+    status: tbd                     # Cards render "TBD"; no data sources wired
+    match: [MN, Minneapolis, "St Paul", "Saint Paul"]
+
+# -----------------------------------------------------------------------------
+# CHANNELS — collapsed groupings; GA4 dimension mapping
+# -----------------------------------------------------------------------------
+channels:
+  - id: paid_search
+    label: Google Ads
+    ga4_channel_group: ["Paid Search", "Cross-network"]
+    cost_source: google_ads_api
+  - id: organic
+    label: Organic Search (SEO)
+    ga4_channel_group: ["Organic Search"]
+    cost_source: agency_retainer_seo_portion
+  - id: gbp
+    label: Google Business Profile
+    ga4_channel_group: ["Organic Search"]   # GA4 doesn't split GBP cleanly
+    flag: attribution_overlap_with_organic
+  - id: direct
+    label: Direct / Branded
+    ga4_channel_group: ["Direct", "Referral"]
+  - id: other
+    label: Other / Offline
+    fallback: true
+
+# -----------------------------------------------------------------------------
+# DATA SOURCES
+# -----------------------------------------------------------------------------
+data_sources:
+  - id: ga4_cpi
+    type: ga4_api
+    property_id: ${GA4_PROPERTY_CPI}
+    metrics: [sessions, users, conversions, eventCount]
+    dimensions: [date, sessionDefaultChannelGroup, city, sessionSource, sessionMedium]
+    filters:
+      - eventName: lead_event       # Confirm exact event name with Justin
+
+  - id: ga4_wellspring
+    type: ga4_api
+    property_id: ${GA4_PROPERTY_WELLSPRING}
+    metrics: [sessions, users, conversions, eventCount]
+    dimensions: [date, sessionDefaultChannelGroup, city]
+    market_override: indiana
+
+  - id: google_ads
+    type: google_ads_api
+    customer_id: ${GADS_CUSTOMER_ID}
+    metrics: [cost_micros, clicks, impressions, conversions]
+    dimensions: [date, campaign.name, customer.descriptive_name]
+    market_extract_from: campaign.name
+
+  - id: performance_summary
+    type: gsheet
+    sheet_id: ${PERFORMANCE_SUMMARY_SHEET_ID}
+    tab: live
+    role: source_of_truth_for_new_patients
+    columns: [year, month, market, new_patients_online, total_leads, paid_conversions, organic_conversions]
+
+  - id: hubspot
+    type: hubspot_api
+    status: deferred_to_v2
+
+# -----------------------------------------------------------------------------
+# TRANSFORMS — order of operations
+# -----------------------------------------------------------------------------
+transforms:
+  - step: normalize_markets
+    applies_to: [ga4_cpi, ga4_wellspring, google_ads]
+    logic: market_classifier_with_ohio_before_colorado
+
+  - step: classify_branded_vs_nonbranded
+    applies_to: google_ads
+    rule: "campaign.name contains 'brand' (case-insensitive)"
+
+  - step: aggregate_to_market_channel_period
+    grain: [iso_week_or_month, market, channel]
+
+  - step: join_costs_to_conversions
+    on: [period, market, channel]
+
+  - step: attribute_new_patients
+    primary_method: direct_from_key_events     # When per-market source data available
+    fallback_method: proportional_from_online_leads
+    per_market_override: true
+    footnote_ref: attribution_footnote
+
+  - step: compute_kpis
+    metrics: [roi, cost_per_new_patient, marketing_profitability]
+
+# -----------------------------------------------------------------------------
+# QUALITY CHECKS — three layers, all run every pipeline execution
+# -----------------------------------------------------------------------------
+quality_checks:
+  ingestion:
+    - source: ga4_cpi
+      checks:
+        - columns_present
+        - row_count_min: 100
+        - date_continuity
+        - no_null_dates
+    - source: ga4_wellspring
+      checks:
+        - columns_present
+        - row_count_min: 20
+        - date_continuity
+    - source: google_ads
+      checks:
+        - columns_present
+        - cost_non_negative
+        - conversions_non_negative
+        - market_extractable
+    - source: performance_summary
+      checks:
+        - columns_present
+        - new_patients_non_negative
+        - market_in_allowlist
+
+  transform:
+    - step: normalize_markets
+      check: no_rows_dropped_unexpectedly
+      tolerance: 0.02                  # Up to 2% dropped is acceptable (genuinely unclassifiable)
+    - step: attribute_new_patients
+      check: shares_sum_to_one_per_market_period
+      tolerance: 0.01
+    - step: join_costs_to_conversions
+      check: no_row_multiplication
+
+  output:
+    - check: roi_change_period_over_period_within
+      range: [-50%, +50%]
+      severity: warning
+    - check: cost_per_np_positive
+      severity: error
+    - check: online_nps_lte_total_leads
+      severity: error
+    - check: self_referral_shares_sum_to_one
+      tolerance: 0.01
+      severity: warning
+
+  fail_behavior:
+    error: halt_pipeline_render_banner_post_slack
+    warning: render_with_indicator_post_slack
+  notify: slack
+
+# -----------------------------------------------------------------------------
+# VIEWS — every entry generates one or more static HTML pages
+# -----------------------------------------------------------------------------
+views:
+  - id: overview
+    template: overview.html
+    title: All Markets
+    cards: [roi, online_new_patients, online_pct_of_self_referrals, self_referrals_pct_of_total, cost_per_online_new_patient]
+    secondary_strip: [marketing_profitability, total_leads, blended_cpl]
+    panels:
+      - self_referral_composition
+      - self_referral_share_trend
+      - new_patients_by_market_trend
+      - roi_by_market_and_np_by_channel_two_up
+      - market_table
+      - channel_table
+    drilldowns:
+      - target: market_detail
+        trigger: market_row_click
+      - target: channel_detail
+        trigger: channel_row_click
+
+  - id: market_detail
+    template: market.html
+    parameterized_by: market
+    title: "{market.label}"
+    cards: [roi, online_new_patients, online_pct_of_self_referrals, self_referrals_pct_of_total, cost_per_online_new_patient]
+    panels:
+      - self_referral_composition
+      - channel_mix
+      - funnel_waterfall
+      - weekly_trend
+      - channel_breakdown_table
+    drilldowns:
+      - target: market_channel_detail
+        trigger: channel_row_click
+
+  - id: channel_detail
+    template: channel.html
+    parameterized_by: channel
+    title: "{channel.label} — All Markets"
+    cards: [roi, online_new_patients, cost_per_online_new_patient, marketing_profitability]
+    panels:
+      - cpnp_by_market
+      - weekly_trend_by_market
+      - market_breakdown_table
+    drilldowns:
+      - target: market_channel_detail
+        trigger: market_row_click
+
+  - id: market_channel_detail
+    template: market_channel.html
+    parameterized_by: [market, channel]
+    title: "{market.label} — {channel.label}"
+    cards: [roi, online_new_patients, cost_per_online_new_patient, marketing_profitability, spend]
+    panels:
+      - daily_performance
+      - leads_to_np_funnel
+
+# -----------------------------------------------------------------------------
+# DELIVERY
+# -----------------------------------------------------------------------------
+delivery:
+  github_pages:
+    repo: FillungoLLC/cpi-dashboard
+    branch: gh-pages
+    custom_domain: null
+  slack:
+    webhook: ${SLACK_CPI_WEBHOOK}
+    channel: "#cpi-health"
+    message_template: |
+      *CPI Health — {{ cadence.primary | titlecase }} of {{ period_label }}*
+      ROI: {{ roi }}  |  Online NPs: {{ online_new_patients }}  |  CPNP: {{ cost_per_online_new_patient }}  |  Online % of Self-Refs: {{ online_pct_of_self_referrals }}
+      {{ quality_indicator }}
+      Dashboard: {{ dashboard_url }}
+  email:
+    enabled: false                  # v2

@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# Pipeline artifacts (regenerated every run)
+store/snapshots/
+output/
+fixtures/
+
+# Local environment
+.env
+*.local.yaml
+venv/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+.DS_Store
+
+# Credentials (should always be GitHub Secrets, never committed)
+*.json.key
+service-account-*.json
+google-ads.yaml

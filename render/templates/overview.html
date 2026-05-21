@@ -1,0 +1,72 @@
+{# Overview template — generates the dashboard root page.
+
+   This template is a placeholder. The structural HTML and CSS already
+   exist in /mnt/user-data/outputs/dashboard_overview.html — the next
+   build step is to lift that file into here and replace the dummy
+   values with Jinja expressions.
+
+   Variables expected in render context:
+     - kpis: full KPI bundle from transform.attribute_np.compute_kpis
+     - config: parsed dashboard.yml
+     - quality: QualityReport instance
+     - period_label: e.g. "Mar 11–17, 2026" or "March 2026"
+#}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CPI Health — Performance Dashboard</title>
+  <link rel="stylesheet" href="/static/cpi-brand.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+  {# Header bar #}
+  {% include "partials/header.html" %}
+
+  <div class="container main">
+
+    {# Topline KPI strip — 5 cards, ROI is hero #}
+    <div class="kpi-strip">
+      {% for kpi in config.kpis.topline %}
+        {% include "partials/kpi_card.html" %}
+      {% endfor %}
+    </div>
+
+    {# Secondary metrics #}
+    <div class="secondary-strip">
+      {% for kpi in config.kpis.secondary %}
+        {% include "partials/secondary_card.html" %}
+      {% endfor %}
+    </div>
+
+    {# Self-referral composition + share trend #}
+    {% include "partials/self_referral_composition.html" %}
+
+    {# New patients by market trend #}
+    {% include "partials/market_trend.html" %}
+
+    {# ROI by market + NPs by channel two-up #}
+    {% include "partials/two_up_charts.html" %}
+
+    {# Market table → links to /markets/{market}.html #}
+    {% include "partials/market_table.html" %}
+
+    {# Channel table → links to /channels/{channel}.html #}
+    {% include "partials/channel_table.html" %}
+
+    {# Methodology + credit footer #}
+    {% include "partials/footer.html" %}
+
+  </div>
+
+  {# Chart.js bootstrapping with KPI data inlined as JSON #}
+  <script>
+    const KPIS = {{ kpis | tojson }};
+    /* See render/static/charts.js for chart initialization. */
+  </script>
+  <script src="/static/charts.js"></script>
+
+</body>
+</html>
