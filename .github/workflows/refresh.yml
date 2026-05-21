@@ -44,6 +44,9 @@ jobs:
           GADS_CUSTOMER_ID: ${{ secrets.GADS_CUSTOMER_ID }}
           GADS_DEVELOPER_TOKEN: ${{ secrets.GADS_DEVELOPER_TOKEN }}
           GADS_REFRESH_TOKEN: ${{ secrets.GADS_REFRESH_TOKEN }}
+          GADS_CLIENT_ID: ${{ secrets.GADS_CLIENT_ID }}
+          GADS_CLIENT_SECRET: ${{ secrets.GADS_CLIENT_SECRET }}
+          GADS_LOGIN_CUSTOMER_ID: ${{ secrets.GADS_LOGIN_CUSTOMER_ID }}
           GSHEETS_SA_JSON: ${{ secrets.GSHEETS_SA_JSON }}
           PERFORMANCE_SUMMARY_SHEET_ID: ${{ secrets.PERFORMANCE_SUMMARY_SHEET_ID }}
           SLACK_CPI_WEBHOOK: ${{ secrets.SLACK_CPI_WEBHOOK }}
