@@ -40,7 +40,8 @@ jobs:
         env:
           GA4_PROPERTY_CPI: ${{ secrets.GA4_PROPERTY_CPI }}
           GA4_PROPERTY_WELLSPRING: ${{ secrets.GA4_PROPERTY_WELLSPRING }}
-          GA4_SERVICE_ACCOUNT_JSON: ${{ secrets.GA4_SERVICE_ACCOUNT_JSON }}
+          # GA4 auth = ADC (user OAuth), not a service account. ADC isn't available
+          # in headless CI yet — local runs work today; cloud auth is a later step.
           GADS_CUSTOMER_ID: ${{ secrets.GADS_CUSTOMER_ID }}
           GADS_DEVELOPER_TOKEN: ${{ secrets.GADS_DEVELOPER_TOKEN }}
           GADS_REFRESH_TOKEN: ${{ secrets.GADS_REFRESH_TOKEN }}

@@ -5,9 +5,11 @@ Two properties configured in dashboard.yml:
 - ga4_cpi (main CPI Health property)
 - ga4_wellspring (Wellspring Pain Solutions / Indiana)
 
-Service account credentials are loaded from the GA4_SERVICE_ACCOUNT_JSON env var
-(a single-line JSON string, set as a GitHub Actions secret). Property IDs come
-from GA4_PROPERTY_CPI / GA4_PROPERTY_WELLSPRING.
+Auth uses Application Default Credentials (ADC) — the user OAuth login created
+by `gcloud auth application-default login`, NOT a service-account JSON. GA4
+would not grant the service-account email property access, so ADC (the logged-in
+user's own access) is the working path. Property IDs come from GA4_PROPERTY_CPI /
+GA4_PROPERTY_WELLSPRING.
 
 Returns a long-format DataFrame with our canonical column names:
     date | channel_group | city | source | medium | sessions | users | conversions
@@ -18,7 +20,6 @@ don't need it).
 """
 from __future__ import annotations
 
-import json
 import logging
 import os
 
@@ -54,7 +55,6 @@ def fetch(config: dict, property_key: str = "cpi") -> pd.DataFrame:
     from google.analytics.data_v1beta.types import (
         DateRange, Dimension, Metric, RunReportRequest,
     )
-    from google.oauth2.service_account import Credentials
 
     property_id = _resolve_property_id(property_key)
     start_date, end_date = date_range(config)
@@ -64,10 +64,11 @@ def fetch(config: dict, property_key: str = "cpi") -> pd.DataFrame:
 
     log.info(f"GA4 fetch  property={property_id}  range={start_date}..{end_date}")
 
-    creds = Credentials.from_service_account_info(
-        json.loads(os.environ["GA4_SERVICE_ACCOUNT_JSON"])
-    )
-    client = BetaAnalyticsDataClient(credentials=creds)
+    # Application Default Credentials. With no credentials passed, the client
+    # uses the gcloud ADC file (`gcloud auth application-default login`) — the
+    # logged-in user's own GA4 access, no service account / Viewer grants needed.
+    # If GOOGLE_APPLICATION_CREDENTIALS is set, that file is used instead.
+    client = BetaAnalyticsDataClient()
 
     rows, offset, page = [], 0, 100_000
     sampled = False
