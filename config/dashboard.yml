@@ -165,7 +165,7 @@ data_sources:
   - id: ga4_cpi
     type: ga4_api
     property_id: ${GA4_PROPERTY_CPI}
-    metrics: [sessions, users, conversions, eventCount]
+    metrics: [sessions, totalUsers, keyEvents, eventCount]
     dimensions: [date, sessionDefaultChannelGroup, city, sessionSource, sessionMedium]
     filters:
       - eventName: lead_event       # Confirm exact event name with Justin
@@ -173,7 +173,7 @@ data_sources:
   - id: ga4_wellspring
     type: ga4_api
     property_id: ${GA4_PROPERTY_WELLSPRING}
-    metrics: [sessions, users, conversions, eventCount]
+    metrics: [sessions, totalUsers, keyEvents, eventCount]
     dimensions: [date, sessionDefaultChannelGroup, city]
     market_override: indiana
 
