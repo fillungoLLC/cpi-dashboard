@@ -28,24 +28,37 @@ Under the FillungoLLC GitHub org, create `acme-dashboard` as a fork of `cpi-dash
 
 Update `config.brand_tokens` to point at the new file.
 
-## 4. Wire up secrets
+## 4. GA4 authentication — use ADC, not a service account
 
-In the new repo, GitHub Settings → Secrets and variables → Actions. Set:
-- `GA4_PROPERTY_*` (one per property)
-- `GA4_SERVICE_ACCOUNT_JSON`
-- `GADS_CUSTOMER_ID`
-- `GADS_DEVELOPER_TOKEN`, `GADS_REFRESH_TOKEN`
-- `GSHEETS_SA_JSON`
-- `PERFORMANCE_SUMMARY_SHEET_ID`
+GA4 will not reliably let you grant a service-account email property access, so **authenticate with Application Default Credentials (ADC)** — the OAuth login of a Google user who already has access to the client's GA4 properties. This is the standard for every Fillungo client dashboard.
+
+One-time setup on the machine that runs the pipeline (gcloud SDK at `/Users/scottcalise/google-cloud-sdk/bin/gcloud`):
+
+```
+gcloud auth application-default login \
+  --scopes=https://www.googleapis.com/auth/analytics.readonly,https://www.googleapis.com/auth/cloud-platform
+gcloud auth application-default set-quota-project fillungo-reporting
+```
+
+That writes `~/.config/gcloud/application_default_credentials.json`. The GA4 ingestion builds its client with no credentials arg, so it uses that file automatically. Leave `GOOGLE_APPLICATION_CREDENTIALS` **unset**.
+
+Caveat: ADC is local-only. Headless GitHub Actions has no ADC file, so the automated cloud run needs a separate auth step (not yet solved). Local runs work today.
+
+## 5. Set property IDs and the remaining secrets
+
+Local runs: copy `.env.example` to `.env` and fill in:
+- `GA4_PROPERTY_*` — the client's GA4 property IDs (one per property)
+- the Google Ads block (`GADS_CUSTOMER_ID`, `GADS_DEVELOPER_TOKEN`, `GADS_REFRESH_TOKEN`, `GADS_CLIENT_ID`, `GADS_CLIENT_SECRET`, `GADS_LOGIN_CUSTOMER_ID`)
+- `GSHEETS_SA_JSON`, `PERFORMANCE_SUMMARY_SHEET_ID`
 - `SLACK_*_WEBHOOK`
 
-Use the same service accounts where possible; just grant access to the new client's GA4 properties and sheets.
+GitHub Actions: set the same names (except GA4 auth — see the ADC caveat above) under Settings → Secrets and variables → Actions.
 
-## 5. Enable GitHub Pages
+## 6. Enable GitHub Pages
 
 Repo Settings → Pages → Source: gh-pages branch. Wait for the first deploy.
 
-## 6. Push and watch the first run
+## 7. Push and watch the first run
 
 Push to main, manually trigger the workflow with `dummy_data: true` for the first run to confirm the pipeline executes end-to-end. Then flip to live data.
 
