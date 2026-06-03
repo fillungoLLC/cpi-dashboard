@@ -1,5 +1,10 @@
 """
-GA4 ingestion via the Google Analytics Data API.
+GA4 ingestion via the Google Analytics Data API — LEGACY / LOCAL-ONLY PATH.
+
+>>> Production GA4 ingestion now happens in Apps Script (see apps_script/Code.gs)
+>>> which writes to a staging Google Sheet that ingest/staging_sheet.py reads.
+>>> This module remains as a local debug/fallback when developers want to bypass
+>>> Apps Script (e.g. `python scripts/run_pipeline.py --legacy-direct`).
 
 Two properties configured in dashboard.yml:
 - ga4_cpi (main CPI Health property)
@@ -9,7 +14,8 @@ Auth uses Application Default Credentials (ADC) — the user OAuth login created
 by `gcloud auth application-default login`, NOT a service-account JSON. GA4
 would not grant the service-account email property access, so ADC (the logged-in
 user's own access) is the working path. Property IDs come from GA4_PROPERTY_CPI /
-GA4_PROPERTY_WELLSPRING.
+GA4_PROPERTY_WELLSPRING. ADC is local-only; headless CI uses the staging Sheet
+path instead.
 
 Returns a long-format DataFrame with our canonical column names:
     date | channel_group | city | source | medium | sessions | users | conversions

@@ -1,10 +1,12 @@
 name: Weekly Refresh
 
 on:
+  # Apps Script fires this after a successful ingestion via the GitHub API.
+  repository_dispatch:
+    types: [cpi_dashboard_refresh]
+  # Safety-net cron: Monday 7:00 AM Central. Will skip with a clear error if
+  # the staging Sheet's control tab shows ingestion hasn't run yet.
   schedule:
-    # Monday 7:00 AM Central = 12:00 UTC (CDT) / 13:00 UTC (CST).
-    # GitHub Actions only supports UTC; this fires at 12:00 UTC year-round.
-    # During CST months the post will arrive at 6am CT — acceptable for v1.
     - cron: "0 12 * * 1"
   workflow_dispatch:
     inputs:
@@ -13,7 +15,7 @@ on:
         required: false
         default: "false"
       dummy_data:
-        description: "Use fixtures instead of live APIs (true/false)"
+        description: "Use fixtures instead of staging Sheet (true/false)"
         required: false
         default: "false"
 
@@ -38,18 +40,10 @@ jobs:
 
       - name: Run pipeline
         env:
-          GA4_PROPERTY_CPI: ${{ secrets.GA4_PROPERTY_CPI }}
-          GA4_PROPERTY_WELLSPRING: ${{ secrets.GA4_PROPERTY_WELLSPRING }}
-          # GA4 auth = ADC (user OAuth), not a service account. ADC isn't available
-          # in headless CI yet — local runs work today; cloud auth is a later step.
-          GADS_CUSTOMER_ID: ${{ secrets.GADS_CUSTOMER_ID }}
-          GADS_DEVELOPER_TOKEN: ${{ secrets.GADS_DEVELOPER_TOKEN }}
-          GADS_REFRESH_TOKEN: ${{ secrets.GADS_REFRESH_TOKEN }}
-          GADS_CLIENT_ID: ${{ secrets.GADS_CLIENT_ID }}
-          GADS_CLIENT_SECRET: ${{ secrets.GADS_CLIENT_SECRET }}
-          GADS_LOGIN_CUSTOMER_ID: ${{ secrets.GADS_LOGIN_CUSTOMER_ID }}
-          GSHEETS_SA_JSON: ${{ secrets.GSHEETS_SA_JSON }}
-          PERFORMANCE_SUMMARY_SHEET_ID: ${{ secrets.PERFORMANCE_SUMMARY_SHEET_ID }}
+          # Staging Sheet (new prod path) — Apps Script writes, Python reads.
+          STAGING_SHEET_ID: ${{ secrets.STAGING_SHEET_ID }}
+          GSHEETS_SA_JSON:  ${{ secrets.GSHEETS_SA_JSON }}
+          # Delivery
           SLACK_CPI_WEBHOOK: ${{ secrets.SLACK_CPI_WEBHOOK }}
         run: |
           ARGS=""

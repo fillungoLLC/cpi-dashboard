@@ -1,66 +1,76 @@
 # Cloning this for a new client
 
-This dashboard is designed to be portable. Every client-specific decision lives in the config file and the brand CSS — the pipeline itself is the same across clients.
+This dashboard is designed to be portable. Every client-specific decision lives in `config/dashboard.yml` and the brand CSS — the pipeline itself is the same across clients. The Apps Script and Ads-bound script need to be deployed once per client because each runs under that client's Google identity.
 
 To stand up a dashboard for a new client (call them "Acme"):
 
 ## 1. Fork the repo
 
-Under the FillungoLLC GitHub org, create `acme-dashboard` as a fork of `cpi-dashboard`. Keep the same directory structure.
+Under the `FillungoLLC` GitHub org, create `acme-dashboard` as a fork of `cpi-dashboard`. Keep the same directory structure.
 
-## 2. Rewrite the config
+## 2. Build the brand skill first
 
-`config/dashboard.yml` is the only file that should change for a new client. Walk through each section:
+`render/static/cpi-brand.css` → `render/static/acme-brand.css`. Pull hex codes, fonts, and logo from a freshly-built Acme brand skill (use the `client-template-brand` skill in this Cowork session if one doesn't exist yet). Update `config.brand_tokens` in the new repo's config to point at the new CSS file.
 
-- `dashboard.client`: new client slug
-- `assumptions`: their revenue-per-conversion, ROI formula, what's in cost
-- `kpis`: the metrics they care about (may not be the same five as CPI)
-- `markets`: their geographic structure (could be one market, could be 20)
-- `channels`: their channel taxonomy (most clients have the same five; some add Display, Social, Email)
-- `data_sources`: their GA4 property, their Ads customer ID, their sheet
-- `quality_checks`: thresholds appropriate to their data volume
-- `views`: which detail pages they need
-- `delivery`: their Slack channel, their repo
+## 3. Rewrite the config
 
-## 3. Update the brand CSS
+`config/dashboard.yml` is the only Python-side file that should change for a new client. Walk through each section:
 
-`render/static/cpi-brand.css` → `render/static/acme-brand.css`. Pull the new client's hex codes from their brand skill (if one exists) or build one first.
+- `dashboard.client` — new client slug
+- `assumptions` — their revenue-per-conversion, ROI formula, what's in cost
+- `kpis` — the metrics they care about (may not be CPI's five)
+- `markets` — their geographic structure (could be one, could be twenty; order matters where IDs are substrings of each other)
+- `channels` — their channel taxonomy
+- `data_sources` — their GA4 property IDs, their Ads MCC, their performance sheet ID
+- `quality_checks` — thresholds appropriate to their data volume
+- `views` — which detail pages they need
+- `delivery` — their Slack channel, their gh-pages repo
 
-Update `config.brand_tokens` to point at the new file.
+## 4. Create the client's staging Sheet
 
-## 4. GA4 authentication — use ADC, not a service account
+In Google Drive, owned by a Fillungo account that has access to the client's GA4 properties and Ads MCC. Don't create tabs by hand — `setup_` will seed them when the Apps Script runs.
 
-GA4 will not reliably let you grant a service-account email property access, so **authenticate with Application Default Credentials (ADC)** — the OAuth login of a Google user who already has access to the client's GA4 properties. This is the standard for every Fillungo client dashboard.
+Copy the Sheet ID. You'll need it three times: once each for the Apps Script Script Properties, the Ads-bound script, and the GitHub Actions secrets.
 
-One-time setup on the machine that runs the pipeline (gcloud SDK at `/Users/scottcalise/google-cloud-sdk/bin/gcloud`):
+## 5. Deploy the Apps Script
 
-```
-gcloud auth application-default login \
-  --scopes=https://www.googleapis.com/auth/analytics.readonly,https://www.googleapis.com/auth/cloud-platform
-gcloud auth application-default set-quota-project fillungo-reporting
-```
+[script.google.com](https://script.google.com) → New project. Paste `apps_script/Code.gs` into the editor; paste `apps_script/appsscript.json` into the manifest.
 
-That writes `~/.config/gcloud/application_default_credentials.json`. The GA4 ingestion builds its client with no credentials arg, so it uses that file automatically. Leave `GOOGLE_APPLICATION_CREDENTIALS` **unset**.
+Project Settings → Script Properties. Add the keys from `apps_script/README.md` (Section 2). The required ones are `STAGING_SHEET_ID`, `GA4_PROPERTY_*` for every property the client has, and optionally `JUSTIN_CSV_SHEET_ID` if you want auto-copy of their manual file.
 
-Caveat: ADC is local-only. Headless GitHub Actions has no ADC file, so the automated cloud run needs a separate auth step (not yet solved). Local runs work today.
+Run `setup_` once manually to seed the staging Sheet tabs.
 
-## 5. Set property IDs and the remaining secrets
+Add a weekly time trigger: `weeklyTrigger`, Monday early AM in their TZ.
 
-Local runs: copy `.env.example` to `.env` and fill in:
-- `GA4_PROPERTY_*` — the client's GA4 property IDs (one per property)
-- the Google Ads block (`GADS_CUSTOMER_ID`, `GADS_DEVELOPER_TOKEN`, `GADS_REFRESH_TOKEN`, `GADS_CLIENT_ID`, `GADS_CLIENT_SECRET`, `GADS_LOGIN_CUSTOMER_ID`)
-- `GSHEETS_SA_JSON`, `PERFORMANCE_SUMMARY_SHEET_ID`
-- `SLACK_*_WEBHOOK`
+## 6. Deploy the Google Ads-bound script
 
-GitHub Actions: set the same names (except GA4 auth — see the ADC caveat above) under Settings → Secrets and variables → Actions.
+In the client's Google Ads UI: Tools → Bulk actions → Scripts → New. Paste `apps_script/google_ads_script.js`. Set the `STAGING_SHEET_ID` constant at the top. If the client runs as an MCC, flip `RUN_AS_MCC = true` and optionally filter accounts by name.
 
-## 6. Enable GitHub Pages
+Authorize. Preview. Run once. Verify the `google_ads` tab in the staging Sheet has rows. Schedule it daily, early Sunday in their TZ.
 
-Repo Settings → Pages → Source: gh-pages branch. Wait for the first deploy.
+## 7. Set up the gspread service account
 
-## 7. Push and watch the first run
+This is the only auth Python needs. Create a service account in the Fillungo Google Cloud project (`fillungo-reporting`), download its JSON key, and share the staging Sheet with the service-account email as a Viewer.
 
-Push to main, manually trigger the workflow with `dummy_data: true` for the first run to confirm the pipeline executes end-to-end. Then flip to live data.
+The same service account can be used across every client — each client's staging Sheet just needs to be shared with it individually.
+
+## 8. Configure GitHub Actions
+
+Repo → Settings → Secrets and variables → Actions. Set:
+
+- `STAGING_SHEET_ID` — Sheet ID from step 4
+- `GSHEETS_SA_JSON` — service-account JSON from step 7 (single line)
+- `SLACK_<CLIENT>_WEBHOOK` — incoming webhook for the client's Slack channel
+
+The workflow file (`.github/workflows/refresh.yml`) reads `SLACK_CPI_WEBHOOK` by default; rename to match the client or rename the secret to keep the same key.
+
+## 9. Enable GitHub Pages
+
+Repo Settings → Pages → Source: `gh-pages` branch. (Private repo Pages requires a paid plan; either keep it public, or upgrade the org, or deploy elsewhere.) Wait for the first deploy to complete.
+
+## 10. Smoke test
+
+Push to `main`. From Actions, manually trigger the workflow with `dummy_data: true` to confirm the pipeline executes end-to-end. Then flip the staging Sheet's `manual_files_ready` to TRUE and run the Apps Script's "Run Now" menu item to test the live path.
 
 ---
 
@@ -68,18 +78,21 @@ Push to main, manually trigger the workflow with `dummy_data: true` for the firs
 
 - The config schema covers virtually every customization without code changes
 - The Jinja templates are client-agnostic — they render whatever the config describes
-- The quality check framework adapts via config thresholds
+- The quality-check framework adapts via config thresholds
+- One service account handles all clients' staging Sheets
 
 ## What may need code changes per client
 
 - If the client uses Adobe Analytics instead of GA4 (new ingest module)
-- If they want non-Google ad data (LinkedIn, Meta — new ingest module)
+- If they want non-Google ad data (LinkedIn, Meta — new ingest module or a parallel Apps Script)
 - If their channel taxonomy is materially different (new aggregation logic)
-- If they want a different chart type (new chart factory in `static/charts.js`)
+- If they want a different chart type (new chart factory in `render/static/charts.js`)
 
 ## Recommended onboarding sequence
 
-1. Build the client's brand skill first (colors, logo, tone) — that's the input to step 3 above
-2. Run a dummy-data deploy before connecting real APIs — confirms the layout reads right
-3. Connect data sources one at a time, leaving the rest on dummy data
-4. Run for two cycles with quality checks on full alert before declaring v1 live
+1. Build the client's brand skill (colors, logo, tone) — input to step 2 above
+2. Create the staging Sheet, deploy the Apps Script, run `setup_` once
+3. Deploy the Ads-bound script and run it once
+4. Run a dummy-data deploy to confirm the layout reads right
+5. Flip `manual_files_ready` and run "Run Now" to test live end-to-end
+6. Run for two cycles with quality checks on full alert before declaring v1 live

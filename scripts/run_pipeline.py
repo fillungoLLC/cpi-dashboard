@@ -17,9 +17,12 @@ Triggered by GitHub Actions on the cron schedule defined in
 .github/workflows/refresh.yml. Also runnable locally for development.
 
 Usage:
-    python scripts/run_pipeline.py                  # full run
+    python scripts/run_pipeline.py                  # full run (staging Sheet)
     python scripts/run_pipeline.py --dry-run        # no deploy, no Slack
     python scripts/run_pipeline.py --dummy-data     # skip ingestion, use fixtures
+    python scripts/run_pipeline.py --legacy-direct  # bypass staging Sheet,
+                                                    # use direct GA4/Ads/Sheet APIs
+                                                    # (local-only fallback)
 """
 from __future__ import annotations
 
@@ -45,7 +48,8 @@ except ImportError:
     pass
 
 # Module imports (stubs in this skeleton — see TODOs in each file)
-from ingest import ga4, google_ads, csv_loader
+from ingest import staging_sheet
+from ingest import ga4, google_ads, csv_loader  # legacy/local-only path
 from transform import normalize_markets, classify_branded, aggregate, join_costs, attribute_np
 from checks import ingestion_checks, transform_checks, output_checks, quality_report
 from render import renderer
@@ -66,14 +70,14 @@ def load_config() -> dict:
         return yaml.safe_load(f)
 
 
-def run(dry_run: bool = False, dummy_data: bool = False) -> int:
+def run(dry_run: bool = False, dummy_data: bool = False, legacy_direct: bool = False) -> int:
     config = load_config()
     quality = quality_report.QualityReport()
 
     log.info("=" * 60)
     log.info("CPI Dashboard pipeline starting")
     log.info(f"  cadence: {config['dashboard']['cadence']['primary']}")
-    log.info(f"  dry_run: {dry_run}  dummy_data: {dummy_data}")
+    log.info(f"  dry_run: {dry_run}  dummy_data: {dummy_data}  legacy_direct: {legacy_direct}")
     log.info("=" * 60)
 
     # -------------------------------------------------------------------------
@@ -82,12 +86,23 @@ def run(dry_run: bool = False, dummy_data: bool = False) -> int:
     log.info("Stage 1: ingestion")
     if dummy_data:
         raw = _load_dummy_data()
+    elif legacy_direct:
+        log.info("  using LEGACY direct-API ingestion (local fallback)")
+        raw = {
+            "ga4_cpi":             ga4.fetch(config, property_key="cpi"),
+            "ga4_wellspring":      ga4.fetch(config, property_key="wellspring"),
+            "google_ads":          google_ads.fetch(config),
+            "performance_summary": csv_loader.fetch_from_gsheet(config),
+        }
     else:
-        raw = {}
-        raw["ga4_cpi"] = ga4.fetch(config, property_key="cpi")
-        raw["ga4_wellspring"] = ga4.fetch(config, property_key="wellspring")
-        raw["google_ads"] = google_ads.fetch(config)
-        raw["performance_summary"] = csv_loader.fetch_from_gsheet(config)
+        log.info("  using staging Sheet ingestion")
+        try:
+            staging_sheet.check_control_freshness()
+        except staging_sheet.ControlTabStale as e:
+            log.error(f"Staging Sheet not ready: {e}")
+            notify.to_slack_failure(quality, f"Staging Sheet not ready: {e}", config)
+            return 1
+        raw = staging_sheet.fetch_all(config)
 
     for source_id, df in raw.items():
         result = ingestion_checks.run(source_id, df, config)
@@ -153,6 +168,13 @@ def run(dry_run: bool = False, dummy_data: bool = False) -> int:
     dashboard_url = deploy.to_gh_pages(output_dir, config)
     notify.to_slack(kpis, quality, dashboard_url, config)
 
+    # Heartbeat back to the staging Sheet control tab (best effort).
+    if not dummy_data and not legacy_direct:
+        try:
+            staging_sheet.write_python_status("success", dashboard_url=dashboard_url)
+        except Exception as e:  # pragma: no cover — defensive
+            log.warning(f"Failed to write Python status back to control tab: {e}")
+
     log.info("Pipeline complete.")
     return 0
 
@@ -175,6 +197,13 @@ if __name__ == "__main__":
                         help="Skip deploy and Slack notification.")
     parser.add_argument("--dummy-data", action="store_true",
                         help="Skip ingestion, use fixtures.")
+    parser.add_argument("--legacy-direct", action="store_true",
+                        help="Bypass staging Sheet; pull GA4/Ads/Sheet directly. "
+                             "Local-only fallback (requires GA4 ADC + Ads dev token).")
     args = parser.parse_args()
 
-    sys.exit(run(dry_run=args.dry_run, dummy_data=args.dummy_data))
+    sys.exit(run(
+        dry_run=args.dry_run,
+        dummy_data=args.dummy_data,
+        legacy_direct=args.legacy_direct,
+    ))

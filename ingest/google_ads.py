@@ -1,5 +1,12 @@
 """
-Google Ads ingestion via the Google Ads API.
+Google Ads ingestion via the Google Ads API — LEGACY / LOCAL-ONLY PATH.
+
+>>> Production Google Ads ingestion now happens in a Google Ads-bound script
+>>> (see apps_script/google_ads_script.js) which runs inside the Ads UI without
+>>> a developer token and writes to a staging Google Sheet. Python reads the
+>>> Sheet via ingest/staging_sheet.py. This module remains as a local
+>>> debug/fallback for developers with a developer token who want to bypass
+>>> the Sheet (`python scripts/run_pipeline.py --legacy-direct`).
 
 Pulls campaign-level performance for the customer ID configured in
 dashboard.yml. Market is extracted downstream from campaign name using the
