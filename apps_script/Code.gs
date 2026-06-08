@@ -16,7 +16,7 @@
  *   1. script.google.com → New project, paste this file in as `Code.gs`.
  *   2. Project Settings → Script Properties: set the keys listed in PROP_KEYS.
  *   3. Triggers → Add trigger → weeklyTrigger, time-based, weekly, Monday early AM CT.
- *   4. Run `setup_` once manually to seed the staging Sheet headers.
+ *   4. Run `setup` once manually to seed the staging Sheet headers.
  *   5. Open the staging Sheet — the custom menu "CPI Dashboard" appears.
  *
  * AUTH
@@ -70,7 +70,7 @@ function onOpen() {
     .createMenu('CPI Dashboard')
     .addItem('Run Now (manual)',     'runNowManual')
     .addItem('Mark manual files READY', 'flagReadyTrue')
-    .addItem('Re-seed sheet headers',   'setup_')
+    .addItem('Re-seed sheet headers',   'setup')
     .addItem('Show control tab',        'showControl')
     .addToUi();
 }
@@ -328,7 +328,10 @@ function notifySlack_(text) {
 // ============================================================================
 // Helpers
 // ============================================================================
-function setup_() {
+function setup() {
+  // Note: name intentionally has no trailing underscore so the Apps Script
+  // editor's "Run function" dropdown shows it. Functions ending in `_` are
+  // treated as private by Apps Script and hidden from the dropdown.
   const ss = openStagingSheet_();
   ensureControlTab_(ss);
   [STAGING_TABS.GA4_CPI, STAGING_TABS.GA4_WELLSPRING].forEach(function (t) {

@@ -14,7 +14,7 @@ Two scripts power the ingestion half of this dashboard. Both write to the same s
 
 ### 1. Create the staging Sheet
 
-Owner: a Fillungo Google account that already has access to both GA4 properties and the CPI Ads MCC (`scott@fillungo.co` works). Don't create any tabs by hand — `setup_` seeds them. Copy the Sheet ID from the URL (`docs.google.com/spreadsheets/d/<THIS>/edit`).
+Owner: a Fillungo Google account that already has access to both GA4 properties and the CPI Ads MCC (`scott@fillungo.co` works). Don't create any tabs by hand — `setup` seeds them. Copy the Sheet ID from the URL (`docs.google.com/spreadsheets/d/<THIS>/edit`).
 
 ### 2. Deploy `Code.gs`
 
@@ -34,7 +34,7 @@ Project Settings → Script Properties. Add these keys (no quotes around values)
 | `SLACK_WEBHOOK` | incoming-webhook URL for #cpi-health | optional |
 | `LOOKBACK_DAYS` | integer, default `100` | optional |
 
-From the editor, select function `setup_` and click Run. Approve the OAuth consent. This seeds the `control`, `ga4_cpi`, `ga4_wellspring` tabs.
+From the editor, select function `setup` and click Run. Approve the OAuth consent. This seeds the `control`, `ga4_cpi`, `ga4_wellspring` tabs.
 
 Triggers (clock icon) → Add Trigger:
 

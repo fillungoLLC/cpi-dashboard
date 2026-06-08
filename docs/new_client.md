@@ -28,7 +28,7 @@ Under the `FillungoLLC` GitHub org, create `acme-dashboard` as a fork of `cpi-da
 
 ## 4. Create the client's staging Sheet
 
-In Google Drive, owned by a Fillungo account that has access to the client's GA4 properties and Ads MCC. Don't create tabs by hand — `setup_` will seed them when the Apps Script runs.
+In Google Drive, owned by a Fillungo account that has access to the client's GA4 properties and Ads MCC. Don't create tabs by hand — `setup` will seed them when the Apps Script runs.
 
 Copy the Sheet ID. You'll need it three times: once each for the Apps Script Script Properties, the Ads-bound script, and the GitHub Actions secrets.
 
@@ -38,7 +38,7 @@ Copy the Sheet ID. You'll need it three times: once each for the Apps Script Scr
 
 Project Settings → Script Properties. Add the keys from `apps_script/README.md` (Section 2). The required ones are `STAGING_SHEET_ID`, `GA4_PROPERTY_*` for every property the client has, and optionally `JUSTIN_CSV_SHEET_ID` if you want auto-copy of their manual file.
 
-Run `setup_` once manually to seed the staging Sheet tabs.
+Run `setup` once manually to seed the staging Sheet tabs.
 
 Add a weekly time trigger: `weeklyTrigger`, Monday early AM in their TZ.
 
@@ -91,7 +91,7 @@ Push to `main`. From Actions, manually trigger the workflow with `dummy_data: tr
 ## Recommended onboarding sequence
 
 1. Build the client's brand skill (colors, logo, tone) — input to step 2 above
-2. Create the staging Sheet, deploy the Apps Script, run `setup_` once
+2. Create the staging Sheet, deploy the Apps Script, run `setup` once
 3. Deploy the Ads-bound script and run it once
 4. Run a dummy-data deploy to confirm the layout reads right
 5. Flip `manual_files_ready` and run "Run Now" to test live end-to-end

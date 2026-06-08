@@ -33,7 +33,7 @@ Each item links to the doc that explains it. Estimated total time: 60–90 minut
 - [ ] **Create the staging Google Sheet** in Drive, owned by `scott@fillungo.co`. No tabs needed yet. Copy the Sheet ID. → `apps_script/README.md` §1
 - [ ] **Publish the repo to GitHub** `FillungoLLC/cpi-dashboard` via GitHub Desktop. Private repo is fine; if you want GitHub Pages on a private repo you'll need the paid plan.
 - [ ] **Create the gspread service account** in the `fillungo-reporting` Google Cloud project. Download the JSON key. Share the staging Sheet with the SA email as **Viewer**. → `docs/auth_setup.md` §3
-- [ ] **Deploy `Code.gs` to a new Apps Script project.** Set all required Script Properties: `STAGING_SHEET_ID`, `GA4_PROPERTY_CPI`, `GA4_PROPERTY_WELLSPRING`. Optional: `JUSTIN_CSV_SHEET_ID`, `GITHUB_PAT`, `GITHUB_REPO`, `SLACK_WEBHOOK`. Run `setup_` once. Add the Monday 6am CT time trigger. → `apps_script/README.md` §2
+- [ ] **Deploy `Code.gs` to a new Apps Script project.** Set all required Script Properties: `STAGING_SHEET_ID`, `GA4_PROPERTY_CPI`, `GA4_PROPERTY_WELLSPRING`. Optional: `JUSTIN_CSV_SHEET_ID`, `GITHUB_PAT`, `GITHUB_REPO`, `SLACK_WEBHOOK`. Run `setup` once. Add the Monday 6am CT time trigger. → `apps_script/README.md` §2
 - [ ] **Deploy `google_ads_script.js`** in the CPI Google Ads account under Tools → Bulk actions → Scripts. Set `STAGING_SHEET_ID` at the top. Test once. Schedule daily, early Sunday CT. → `apps_script/README.md` §3
 - [ ] **Set GitHub Actions secrets**: `STAGING_SHEET_ID`, `GSHEETS_SA_JSON`, `SLACK_CPI_WEBHOOK`. → `docs/auth_setup.md` §4
 - [ ] **Enable GitHub Pages**: Settings → Pages → Source = `gh-pages` branch.
