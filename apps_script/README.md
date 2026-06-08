@@ -36,6 +36,8 @@ Project Settings → Script Properties. Add these keys (no quotes around values)
 
 From the editor, select function `setup` and click Run. Approve the OAuth consent. This seeds the `control`, `ga4_cpi`, `ga4_wellspring` tabs.
 
+**Enable the GA4 Data API on the Apps Script's auto-created Cloud project.** Every Apps Script project gets a hidden Google Cloud project. Until you enable the Data API there, GA4 calls return 403. The first GA4 run will fail with an error containing an `activationUrl` like `https://console.developers.google.com/apis/api/analyticsdata.googleapis.com/overview?project=<NNN>` — open that URL, click **Enable**, wait 1–2 minutes, retry. This is a one-time setup per Apps Script project.
+
 Triggers (clock icon) → Add Trigger:
 
 - Function: `weeklyTrigger`

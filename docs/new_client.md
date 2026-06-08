@@ -40,6 +40,8 @@ Project Settings → Script Properties. Add the keys from `apps_script/README.md
 
 Run `setup` once manually to seed the staging Sheet tabs.
 
+**Enable the GA4 Data API on the Apps Script's auto-created Cloud project.** The first GA4 fetch will 403 until you do — the error message contains the exact activation URL to click. One-time setup per Apps Script project.
+
 Add a weekly time trigger: `weeklyTrigger`, Monday early AM in their TZ.
 
 ## 6. Deploy the Google Ads-bound script
