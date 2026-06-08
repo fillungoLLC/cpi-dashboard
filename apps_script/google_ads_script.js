@@ -64,12 +64,16 @@ function main() {
 // QUERY
 // ============================================================================
 function pullCampaignRows_(lookbackDays) {
-  // GAQL — same shape Python expects after cost-micros → dollars conversion.
+  // GAQL accepts only a fixed set of DURING literals (LAST_7_DAYS, LAST_14_DAYS,
+  // LAST_30_DAYS, LAST_90_DAYS, etc.) — arbitrary windows like LAST_100_DAYS
+  // are invalid. Use an explicit BETWEEN range instead so any lookback works.
+  var end = new Date();
+  var start = new Date(end.getTime() - lookbackDays * 24 * 60 * 60 * 1000);
   var query =
     "SELECT segments.date, campaign.name, customer.descriptive_name, " +
     "metrics.clicks, metrics.impressions, metrics.cost_micros, metrics.conversions " +
     "FROM campaign " +
-    "WHERE segments.date DURING LAST_" + lookbackDays + "_DAYS " +
+    "WHERE segments.date BETWEEN '" + fmtDate_(start) + "' AND '" + fmtDate_(end) + "' " +
     "AND campaign.status != 'REMOVED'";
 
   var rows = [];
@@ -86,6 +90,12 @@ function pullCampaignRows_(lookbackDays) {
     ]);
   }
   return rows;
+}
+
+function fmtDate_(d) {
+  var m = ('0' + (d.getMonth() + 1)).slice(-2);
+  var day = ('0' + d.getDate()).slice(-2);
+  return d.getFullYear() + '-' + m + '-' + day;
 }
 
 // ============================================================================
