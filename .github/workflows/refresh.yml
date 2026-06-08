@@ -25,6 +25,11 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: write          # needed to push to gh-pages branch
+    env:
+      # Opt into Node.js 24 ahead of GitHub's 2026-06-16 cutover. After the
+      # cutover this env var is a no-op; can be removed once we bump the action
+      # versions to their Node-24-native releases.
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
