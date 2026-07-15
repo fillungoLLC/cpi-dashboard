@@ -1,0 +1,99 @@
+{#
+  Base layout for all CPI dashboard pages.
+
+  Context (provided by render/renderer.py):
+    page          : {title, subtitle, nav_active, breadcrumb[]}
+    header        : {period_label, refreshed, quality_label, quality_class}
+    quality_banner: {class, text} or None
+    charts        : dict of {canvas_id: chartjs_spec}   (inlined as JSON)
+    config, meta
+  Blocks:
+    content : page body
+#}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CPI Health — {{ page.title }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ rel }}static/cpi-brand.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <div class="header">
+    <div class="header-logo">
+      <div class="logo-text">CPI<span class="accent">health</span></div>
+    </div>
+    <div class="header-info">
+      <div class="header-title">Performance Dashboard</div>
+      <div class="header-meta">
+        <span>{{ header.period_label }}</span>
+        <span>·</span>
+        <span>Refreshed {{ header.refreshed }}</span>
+        <span>·</span>
+        <span><span class="quality-dot {{ header.quality_class }}"></span>{{ header.quality_label }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="topnav">
+    <div class="container">
+      <a href="{{ rel }}index.html" class="{{ 'active' if page.nav_active == 'overview' }}">Overview</a>
+      <a href="{{ rel }}exceptions.html" class="{{ 'active' if page.nav_active == 'exceptions' }}">Exceptions</a>
+      <a href="{{ rel }}campaigns.html" class="{{ 'active' if page.nav_active == 'campaigns' }}">Campaigns</a>
+    </div>
+  </div>
+
+  <div class="container main">
+
+    {% if page.breadcrumb %}
+    <nav class="breadcrumb">
+      {% for crumb in page.breadcrumb %}
+        {% if crumb.href %}<a href="{{ crumb.href }}">{{ crumb.label }}</a>{% else %}<span class="current">{{ crumb.label }}</span>{% endif %}
+        {% if not loop.last %}<span class="sep">&raquo;</span>{% endif %}
+      {% endfor %}
+    </nav>
+    {% endif %}
+
+    {% if page.show_title %}
+    <h1 class="page-title">{{ page.title }}</h1>
+    {% if page.subtitle %}<div class="page-subtitle">{{ page.subtitle }}</div>{% endif %}
+    {% endif %}
+
+    {% if quality_banner %}
+    <div class="quality-banner {{ quality_banner.class }}">{{ quality_banner.text }}</div>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+
+    <div class="footer">
+      <div class="footer-meth">
+        <h4>Assumptions</h4>
+        <p>Revenue per new patient: {{ meta.revenue_per_new_patient | money0 }}. ROI = (NPs × revenue − all-in cost) / all-in cost. All-in cost = media spend + agency fees. Partner costs excluded.</p>
+        <h4>Attribution</h4>
+        <p>Channel attribution for new patients is modeled proportionally from online lead share. Direct intake source data is not yet captured at the patient level — improving this is a near-term priority.</p>
+        <h4>Self-Referral Categories</h4>
+        <p>Source categories are based on patient self-report at intake and may understate or miscategorize true source. Categories are harmonized across markets where intake systems differ.</p>
+        <h4>Quality Status</h4>
+        <p>{{ header.quality_detail }}</p>
+      </div>
+      <div class="footer-credit">
+        <div class="agency">Fillungo</div>
+        <div class="meta">
+          Generated {{ header.generated }}<br />
+          Sources: GA4, Google Ads, performance_summary
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>window.__CHARTS__ = {{ charts | tojson }};</script>
+  <script src="{{ rel }}static/charts.js"></script>
+
+</body>
+</html>

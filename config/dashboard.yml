@@ -354,3 +354,18 @@ delivery:
       Dashboard: {{ dashboard_url }}
   email:
     enabled: false                  # v2
+
+# -----------------------------------------------------------------------------
+# v2 DISPLAY + EXCEPTIONS (thresholds are placeholders — set with the client)
+# -----------------------------------------------------------------------------
+display:
+  trends: collapsed          # collapsed | expanded
+
+exceptions:
+  cpnp_ceiling: 400          # flag market/channel CPNP above this ($)
+  cpc_wow_band_pct: 15       # flag campaigns moving more than ±this % vs prior period
+  np_drop_pct: 20            # flag markets with NP down more than this % vs prior period
+
+attribution:
+  campaign_level: deferred   # deferred until lead-to-patient tracking exists
+  np_source: monthly_performance_summary

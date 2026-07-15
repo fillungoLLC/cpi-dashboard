@@ -1,0 +1,34 @@
+{% extends "_base.html" %}
+{% block content %}
+
+  <div class="quality-banner warn" style="background:var(--light-blue);border-color:var(--mid-blue);color:var(--cpi-blue)">
+    New-patient and CPNP columns are shown as <strong>pending attribution</strong>. Campaign media metrics (spend, clicks, CPC, leads) are live; tying a new patient to the campaign that drove it needs lead-to-patient tracking (gclid/UTM capture at form and call). See methodology.
+  </div>
+
+  <div class="section-label">Campaign Media Performance</div>
+  {% if not campaigns %}
+    <div class="pending-panel"><div class="pending-note">No campaign-level Ads data available for this period.</div></div>
+  {% else %}
+  <div class="panel no-pad">
+    <table class="data-table">
+      <thead>
+        <tr><th>Campaign</th><th>Spend</th><th>Clicks</th><th>CPC</th><th>Leads</th><th>NPs</th><th>CPNP</th></tr>
+      </thead>
+      <tbody>
+        {% for c in campaigns %}
+        <tr>
+          <td><span class="market-name">{{ c.name }}</span><span class="brand-tag">{{ c.market }} · {{ c.type }}</span></td>
+          <td>{{ c.spend }}</td>
+          <td>{{ c.clicks }}</td>
+          <td>{{ c.cpc }}</td>
+          <td>{{ c.leads }}</td>
+          <td><span class="pending-inline">pending</span></td>
+          <td><span class="pending-inline">pending</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+{% endblock %}

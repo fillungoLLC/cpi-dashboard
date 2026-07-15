@@ -153,7 +153,7 @@ def run(dry_run: bool = False, dummy_data: bool = False, legacy_direct: bool = F
     # 4. RENDER
     # -------------------------------------------------------------------------
     log.info("Stage 4: render")
-    output_dir = renderer.render_all(kpis, attributed, config, quality)
+    output_dir = renderer.render_all(kpis, attributed, config, quality, raw=raw)
     log.info(f"  rendered to: {output_dir}")
 
     # -------------------------------------------------------------------------

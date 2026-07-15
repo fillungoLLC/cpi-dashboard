@@ -1,38 +1,36 @@
-{# Channel detail template — one HTML page per channel.
-   Generated at: /channels/{channel.id}.html
-#}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CPI Health — {{ channel.label }}</title>
-  <link rel="stylesheet" href="/static/cpi-brand.css" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-</head>
-<body>
+{% extends "_base.html" %}
+{% import "_macros.html" as m %}
+{% block content %}
 
-  {% include "partials/header.html" %}
+  {{ m.kpi_strip(cards) }}
+  {{ m.secondary_strip(secondary) }}
 
-  <div class="container main">
-
-    <nav class="breadcrumb">
-      <a href="/">Overview</a> &raquo; <span>{{ channel.label }}</span>
-    </nav>
-
-    <div class="kpi-strip">
-      {% for kpi in config.kpis.topline %}
-        {% include "partials/kpi_card.html" %}
-      {% endfor %}
-    </div>
-
-    {% include "partials/cpnp_by_market_chart.html" %}
-    {% include "partials/weekly_trend_by_market.html" %}
-    {% include "partials/market_breakdown_table.html" %}
-
-    {% include "partials/footer.html" %}
-
+  <div class="section-label">Cost per Online New Patient by Market</div>
+  <div class="panel">
+    <div class="panel-title">CPNP · {{ page.title }}</div>
+    <div class="panel-sub">{{ header.period_label }} · lower is better</div>
+    <div class="chart-wrap"><canvas id="cpnpByMarket"></canvas></div>
   </div>
 
-</body>
-</html>
+  <div class="section-label">Market Breakdown · {{ page.title }}</div>
+  {{ m.perf_table(["Market","NPs","CPNP","ROI","Spend"], market_rows, market_total) }}
+
+  {% set trend_body %}
+    <div class="panel" style="border:none;box-shadow:none;padding:0">
+      <div class="panel-title">Weekly Trend by Market · {{ page.title }}</div>
+      <div class="panel-sub">Online new patients</div>
+      <div class="chart-wrap tall"><canvas id="weeklyTrendByMarket"></canvas></div>
+    </div>
+  {% endset %}
+
+  {% if trends_collapsed %}
+  <details class="trends">
+    <summary>Trends &amp; Charts</summary>
+    <div class="trends-body">{{ trend_body }}</div>
+  </details>
+  {% else %}
+  <div class="section-label">Trends</div>
+  {{ trend_body }}
+  {% endif %}
+
+{% endblock %}

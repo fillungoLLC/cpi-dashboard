@@ -1,49 +1,32 @@
-{# Market × Channel intersection template.
-   Generated at: /detail/{market.id}--{channel.id}.html
-   30 of these per refresh (6 markets × 5 channels), 6 of which are TBD.
-#}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CPI Health — {{ market.label }} · {{ channel.label }}</title>
-  <link rel="stylesheet" href="/static/cpi-brand.css" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-</head>
-<body>
+{% extends "_base.html" %}
+{% import "_macros.html" as m %}
+{% block content %}
 
-  {% include "partials/header.html" %}
+  {{ m.kpi_strip(cards, with_spend=True) }}
 
-  <div class="container main">
-
-    <nav class="breadcrumb">
-      <a href="/">Overview</a> &raquo;
-      <a href="/markets/{{ market.id }}.html">{{ market.label }}</a> &raquo;
-      <span>{{ channel.label }}</span>
-    </nav>
-
-    {% if market.status == "tbd" %}
-      <div class="tbd-banner">
-        <h2>{{ market.label }} — Data integration pending</h2>
-      </div>
-    {% else %}
-
-      <div class="kpi-strip">
-        {% for kpi in config.kpis.topline %}
-          {% include "partials/kpi_card.html" %}
-        {% endfor %}
-        {% include "partials/spend_card.html" %}
-      </div>
-
-      {% include "partials/daily_performance.html" %}
-      {% include "partials/leads_to_np_funnel.html" %}
-
-    {% endif %}
-
-    {% include "partials/footer.html" %}
-
+  <div class="section-label">Acquisition Funnel · {{ page.title }}</div>
+  <div class="panel">
+    <div class="panel-title">Spend → Clicks → Sessions → Leads → New Patients</div>
+    <div class="panel-sub">{{ header.period_label }}</div>
+    {{ m.funnel(funnel_steps) }}
   </div>
 
-</body>
-</html>
+  {% set trend_body %}
+    <div class="panel" style="border:none;box-shadow:none;padding:0">
+      <div class="panel-title">Weekly Performance · {{ page.title }}</div>
+      <div class="panel-sub">Leads and spend by week</div>
+      <div class="chart-wrap tall"><canvas id="weeklyPerformance"></canvas></div>
+    </div>
+  {% endset %}
+
+  {% if trends_collapsed %}
+  <details class="trends">
+    <summary>Trends &amp; Charts</summary>
+    <div class="trends-body">{{ trend_body }}</div>
+  </details>
+  {% else %}
+  <div class="section-label">Trends</div>
+  {{ trend_body }}
+  {% endif %}
+
+{% endblock %}

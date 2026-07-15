@@ -1,0 +1,58 @@
+{% extends "_base.html" %}
+{% block content %}
+
+  <div class="section-label">CPC Heatmap · Market × Campaign Type</div>
+  <div class="panel">
+    <div class="panel-title">Cost per Click</div>
+    <div class="panel-sub">{{ heatmap.cur }} vs {{ heatmap.prev }} · color = month-over-month move</div>
+    {% if heatmap.empty %}
+      <div class="pending-panel"><div class="pending-note">No campaign-level Ads data available for this period.</div></div>
+    {% else %}
+    <table class="heatmap">
+      <thead>
+        <tr><th class="row-head">Market</th><th>Brand</th><th>Non-Brand</th></tr>
+      </thead>
+      <tbody>
+        {% for r in heatmap.rows %}
+        <tr>
+          <td class="row-head">{{ r.market }}</td>
+          {% for cell in r.cells %}
+          <td class="{{ cell.cls }}"><span class="cell-cpc">{{ cell.cpc }}</span><span class="cell-wow">{{ cell.wow }}</span></td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div class="heat-legend">
+      <span><span class="swatch heat-down2"></span>CPC down &gt; {{ heatmap.band }}%</span>
+      <span><span class="swatch heat-down1"></span>down</span>
+      <span><span class="swatch heat-flat"></span>flat</span>
+      <span><span class="swatch heat-up1"></span>up</span>
+      <span><span class="swatch heat-up2"></span>up &gt; {{ heatmap.band }}%</span>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="section-label">Exceptions · {{ exceptions.total }} flagged</div>
+  {% if exceptions.total == 0 %}
+    <div class="exc-empty">Nothing outside the thresholds this period. All markets and campaigns are within band.</div>
+  {% endif %}
+  {% for g in exceptions.groups %}
+  <div class="exc-group">
+    <div class="panel-title" style="margin-bottom:10px">{{ g.title }} <span class="pill">{{ g.cards | length }}</span></div>
+    {% if g.cards %}
+      {% for c in g.cards %}
+      <div class="exc-card {{ c.sev }}">
+        <div class="exc-what">{{ c.what }}</div>
+        <div class="exc-metric">{{ c.metric }}</div>
+        <div class="exc-detail">{{ c.detail }}</div>
+        <div class="exc-move {{ c.move_cls }}">{{ c.move }}</div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="exc-empty" style="padding:16px;font-size:12px">None this period.</div>
+    {% endif %}
+  </div>
+  {% endfor %}
+
+{% endblock %}

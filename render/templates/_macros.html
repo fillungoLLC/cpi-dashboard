@@ -1,0 +1,102 @@
+{# Reusable presentational macros. All values arrive pre-formatted from renderer.py. #}
+
+{% macro kpi_strip(cards, with_spend=False) %}
+<div class="kpi-strip{{ ' with-spend' if with_spend }}">
+  {% for c in cards %}
+  <div class="kpi-card{{ ' hero' if c.hero }}">
+    <div class="kpi-label">{{ c.label }}</div>
+    <div class="kpi-value{{ ' pending-inline' if c.pending }}">{{ c.value }}</div>
+    <div class="kpi-foot">{{ c.foot }}{% if c.info %} <span class="info-badge" title="{{ c.info }}">i</span>{% endif %}</div>
+  </div>
+  {% endfor %}
+</div>
+{% endmacro %}
+
+{% macro secondary_strip(items) %}
+<div class="secondary-strip">
+  {% for it in items %}
+  <div class="secondary-card">
+    <span class="label">{{ it.label }}</span>
+    <span>{% if it.compare %}<span class="value">{{ it.value }}</span><span class="compare">{{ it.compare }}</span>{% else %}<span class="value">{{ it.value }}</span>{% endif %}</span>
+  </div>
+  {% endfor %}
+</div>
+{% endmacro %}
+
+{% macro perf_table(headers, rows, total) %}
+<div class="panel no-pad">
+  <table class="data-table">
+    <thead>
+      <tr>{% for h in headers %}<th>{{ h }}</th>{% endfor %}<th></th></tr>
+    </thead>
+    <tbody>
+      {% for r in rows %}
+      <tr class="clickable{{ ' tbd-row' if r.tbd }}"{% if r.href %} onclick="window.location='{{ r.href }}'"{% endif %}>
+        <td><span class="market-name"{% if r.tbd %} style="color:var(--light-gray)"{% endif %}>{{ r.name }}</span>{% if r.tag %}<span class="brand-tag">{{ r.tag }}</span>{% endif %}</td>
+        {% for cell in r.cells %}<td>{{ cell }}</td>{% endfor %}
+        <td><span class="row-arrow">→</span></td>
+      </tr>
+      {% endfor %}
+      {% if total %}
+      <tr class="total-row">
+        <td>{{ total.name }}</td>{% for cell in total.cells %}<td>{{ cell }}</td>{% endfor %}<td></td>
+      </tr>
+      {% endif %}
+    </tbody>
+  </table>
+</div>
+{% endmacro %}
+
+{% macro funnel(steps) %}
+<div class="funnel-wrap">
+  {% for s in steps %}
+  <div class="funnel-step{{ ' terminal' if loop.last }}">
+    <div class="label">{{ s.label }}</div>
+    <div class="value">{{ s.value }}</div>
+    <div class="drop">{{ s.note }}</div>
+    {% if not loop.last %}<span class="funnel-arrow">›</span>{% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endmacro %}
+
+{% macro self_ref_composition(comp, title, sub) %}
+<div class="panel">
+  <div class="grid-2-split">
+    <div>
+      <div class="panel-title">{{ title }}</div>
+      <div class="panel-sub">{{ sub }}</div>
+      {% if comp and comp.rows %}
+        {% for row in comp.rows %}
+        <div class="comp-row">
+          <div class="comp-label">{{ row.label }}</div>
+          <div class="comp-bar-track"><div class="comp-bar-fill {{ row.tone }}" style="width: {{ row.pct }}%;"></div></div>
+          <div class="comp-pct">{{ row.pct }}%</div>
+          <div class="comp-count">{{ row.count }}</div>
+        </div>
+        {% endfor %}
+        <div class="self-ref-summary">
+          <span class="label">Self-Refs as % of Total New Patients</span>
+          <span class="value">{{ comp.self_ref_pct }}</span>
+        </div>
+      {% else %}
+        <div class="pending-panel" style="margin-top:8px">
+          <div class="pending-title">Awaiting intake source data</div>
+          <div class="pending-note">Self-referral composition comes from the monthly practice intake summary (patient self-reported source). It populates once that feed is connected; online performance below is unaffected.</div>
+        </div>
+      {% endif %}
+    </div>
+    <div>
+      <div class="panel-title">Share Trend</div>
+      <div class="panel-sub">% of self-referrals by source</div>
+      {% if comp and comp.rows %}
+        <div class="chart-wrap"><canvas id="shareTrend"></canvas></div>
+      {% else %}
+        <div class="pending-panel" style="margin-top:8px;height:240px;display:flex;flex-direction:column;justify-content:center">
+          <div class="pending-note">Trend appears with two or more months of intake data.</div>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endmacro %}

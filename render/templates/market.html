@@ -1,62 +1,55 @@
-{# Market detail template — one HTML page per market.
+{% extends "_base.html" %}
+{% import "_macros.html" as m %}
+{% block content %}
 
-   Generated at: /markets/{market.id}.html
+  {% if tbd %}
+  <div class="tbd-banner">
+    <h2>{{ page.title }} — Data integration pending</h2>
+    <p>This market is on the roadmap. Cards and panels populate once data flows are established.</p>
+  </div>
+  {% else %}
 
-   Variables expected:
-     - market: the market dict from config['markets']
-     - kpis: market-scoped KPI subset
-     - config, quality, period_label
-#}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CPI Health — {{ market.label }}</title>
-  <link rel="stylesheet" href="/static/cpi-brand.css" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-</head>
-<body>
+  {{ m.kpi_strip(cards) }}
+  {{ m.secondary_strip(secondary) }}
 
-  {% include "partials/header.html" %}
+  <div class="section-label">Self-Referral Composition</div>
+  {{ m.self_ref_composition(composition, "Source Breakdown · " ~ page.title, header.period_label) }}
 
-  <div class="container main">
-
-    {# Breadcrumb #}
-    <nav class="breadcrumb">
-      <a href="/">Overview</a> &raquo; <span>{{ market.label }}</span>
-    </nav>
-
-    {% if market.status == "tbd" %}
-      <div class="tbd-banner">
-        <h2>{{ market.label }} — Data integration pending</h2>
-        <p>This market is on the roadmap. Cards and panels will populate once data flows are established.</p>
-      </div>
-    {% else %}
-
-      {# Topline KPI strip — same 5 cards as overview, market-scoped #}
-      <div class="kpi-strip">
-        {% for kpi in config.kpis.topline %}
-          {% include "partials/kpi_card.html" %}
-        {% endfor %}
-      </div>
-
-      {# Self-referral composition for this market #}
-      {% include "partials/self_referral_composition.html" %}
-
-      {# Channel mix + funnel waterfall + weekly trend for this market #}
-      {% include "partials/channel_mix.html" %}
-      {% include "partials/funnel_waterfall.html" %}
-      {% include "partials/weekly_trend.html" %}
-
-      {# Channel breakdown table → links to /detail/{market}--{channel}.html #}
-      {% include "partials/channel_breakdown_table.html" %}
-
-    {% endif %}
-
-    {% include "partials/footer.html" %}
-
+  <div class="section-label">Acquisition Funnel</div>
+  <div class="panel">
+    <div class="panel-title">Spend → Clicks → Sessions → Leads → New Patients</div>
+    <div class="panel-sub">{{ header.period_label }} · paid + organic combined</div>
+    {{ m.funnel(funnel_steps) }}
   </div>
 
-</body>
-</html>
+  <div class="section-label">Channel Breakdown · {{ page.title }}</div>
+  {{ m.perf_table(["Channel","NPs","CPNP","ROI","Spend"], channel_rows, channel_total) }}
+
+  {% set trend_body %}
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-title">Channel Mix · {{ page.title }}</div>
+        <div class="panel-sub">Online new patients · monthly stacked</div>
+        <div class="chart-wrap"><canvas id="channelMix"></canvas></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">Weekly Trend · {{ page.title }}</div>
+        <div class="panel-sub">NPs, leads, and spend</div>
+        <div class="chart-wrap"><canvas id="weeklyTrend"></canvas></div>
+      </div>
+    </div>
+  {% endset %}
+
+  {% if trends_collapsed %}
+  <details class="trends">
+    <summary>Trends &amp; Charts</summary>
+    <div class="trends-body">{{ trend_body }}</div>
+  </details>
+  {% else %}
+  <div class="section-label">Trends</div>
+  {{ trend_body }}
+  {% endif %}
+
+  {% endif %}
+
+{% endblock %}
