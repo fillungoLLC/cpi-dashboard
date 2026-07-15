@@ -141,7 +141,11 @@ def run(dry_run: bool = False, dummy_data: bool = False, legacy_direct: bool = F
     # 3. COMPUTE KPIs + OUTPUT CHECKS
     # -------------------------------------------------------------------------
     log.info("Stage 3: KPI computation + output checks")
-    kpis = attribute_np.compute_kpis(attributed, config, performance_summary=perf_summary)
+    previous = snapshots.load_previous("transformed")
+    kpis = attribute_np.compute_kpis(
+        attributed, config, performance_summary=perf_summary,
+        ads=classified.get("google_ads"), previous=previous,
+    )
 
     for check in output_checks.run_all(kpis, attributed, config):
         quality.record(stage="output", source="kpis", result=check)

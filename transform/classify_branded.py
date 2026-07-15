@@ -1,8 +1,11 @@
 """
 Branded vs non-branded classification for Google Ads campaigns.
 
-Simple rule: campaign name contains 'brand' (case-insensitive) → branded.
-This catches conventional Fillungo naming (e.g., "KY - Brand", "TX Brand Search").
+Rule: a campaign is branded if its name contains 'brand' (case-insensitive) but
+NOT a 'non-brand' variant. Matching 'brand' alone is wrong because "Non-Brand"
+contains the substring "brand" — so we explicitly exclude non-brand names first.
+Catches conventional Fillungo naming (e.g. "KY - Paid Search - Brand" vs
+"KY - Paid Search - Non-Brand").
 
 Returns the same DataFrames with an added `is_branded` boolean column.
 """
@@ -23,7 +26,11 @@ def run(normalized: dict, config: dict) -> dict:
 
         df = df.copy()
         name_col = "campaign.name" if "campaign.name" in df.columns else "campaign_name"
-        df["is_branded"] = df[name_col].str.contains("brand", case=False, na=False)
+        names = df[name_col].fillna("")
+        has_brand = names.str.contains("brand", case=False, na=False)
+        # "non-brand" / "non brand" / "nonbrand" all count as NON-brand
+        is_nonbrand = names.str.contains(r"non.?brand", case=False, na=False, regex=True)
+        df["is_branded"] = has_brand & ~is_nonbrand
         out[source_id] = df
 
     return out

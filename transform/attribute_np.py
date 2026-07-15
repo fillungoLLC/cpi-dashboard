@@ -14,13 +14,17 @@ every market uses the proportional fallback (per the attribution footnote); the
 direct path activates per market as soon as patient-level source data exists.
 
 KPI computation also lives here so the attribution method is colocated with
-its consumer.
+its consumer. The v2 blocks (by_campaign, by_market_campaign_type heatmap, and
+the exceptions bundle) are computed here too, from the classified Google Ads
+frame plus period-over-period deltas (see transform.deltas).
 """
 from __future__ import annotations
 
 import logging
 
 import pandas as pd
+
+from transform import deltas
 
 log = logging.getLogger(__name__)
 
@@ -29,13 +33,7 @@ DIRECT = "direct_from_key_events"
 
 
 def run(joined: pd.DataFrame, config: dict, performance_summary: pd.DataFrame | None = None) -> pd.DataFrame:
-    """Add online_lead_share, online_nps_attributed, and attribution_method.
-
-    online_lead_share is computed per (period, market) across online channels and
-    is what the transform-layer `shares_sum_to_one` check validates. New patients
-    come from the monthly performance_summary sheet and are spread across the
-    online (period, channel) rows of each market-month in proportion to leads.
-    """
+    """Add online_lead_share, online_nps_attributed, and attribution_method."""
     if joined is None or joined.empty:
         log.info("attribute_np: empty input")
         return joined
@@ -44,12 +42,10 @@ def run(joined: pd.DataFrame, config: dict, performance_summary: pd.DataFrame | 
     online = _online_channels(config)
     df["is_online"] = df["channel"].isin(online)
 
-    # --- online lead share per (period, market) across online channels ---
     online_leads = df["leads"].where(df["is_online"], 0)
     grp = df.assign(_ol=online_leads).groupby(["period", "market"])["_ol"].transform("sum")
     df["online_lead_share"] = (online_leads / grp).where(grp > 0, 0.0)
 
-    # --- distribute monthly new patients across the online rows ---
     df["online_nps_attributed"] = 0.0
     df["attribution_method"] = PROPORTIONAL
     np_lookup = _np_lookup(performance_summary)
@@ -73,12 +69,14 @@ def run(joined: pd.DataFrame, config: dict, performance_summary: pd.DataFrame | 
 
 
 def compute_kpis(attributed: pd.DataFrame, config: dict,
-                 performance_summary: pd.DataFrame | None = None) -> dict:
+                 performance_summary: pd.DataFrame | None = None,
+                 ads: pd.DataFrame | None = None,
+                 previous: pd.DataFrame | None = None) -> dict:
     """Compute the KPI bundle that the renderer consumes.
 
-    KPIs the contract columns support are computed for the most recent reporting
-    period. Self-referral composition needs NP-breakdown columns the sheet does
-    not yet carry, so it is returned empty (TBD) for the renderer to placeholder.
+    `ads` is the normalized + brand-classified Google Ads frame (market and
+    is_branded columns). `previous` is a prior transformed snapshot for cross-run
+    deltas; when None, deltas fall back to prior-month within this run.
     """
     if attributed is None or attributed.empty:
         log.warning("compute_kpis: empty input")
@@ -87,6 +85,11 @@ def compute_kpis(attributed: pd.DataFrame, config: dict,
     rev = config["assumptions"]["revenue_per_new_patient"]
     ps = _index_perf_summary(performance_summary)
     reporting_month = _reporting_month(attributed)
+    months = sorted(attributed["month"].unique())
+    prev_month = None
+    for m in months:
+        if m < reporting_month:
+            prev_month = m
     month_rows = attributed[attributed["month"] == reporting_month]
 
     overview = _kpi_block(
@@ -127,9 +130,17 @@ def compute_kpis(attributed: pd.DataFrame, config: dict,
             rev=rev,
         )
 
+    # --- v2: campaign media, CPC heatmap, exceptions ---
+    heatmap = deltas.cpc_heatmap(ads, reporting_month, prev_month, config)
+    np_cpnp = deltas.np_cpnp_deltas(attributed, ps, reporting_month, prev_month,
+                                    config, rev, previous=previous)
+    by_campaign = _by_campaign(ads, reporting_month)
+    exceptions = _exceptions(by_market, heatmap, np_cpnp, config)
+
     return {
         "meta": {
             "reporting_period": reporting_month,
+            "prior_period": prev_month,
             "cadence": config["dashboard"]["cadence"]["primary"],
             "revenue_per_new_patient": rev,
         },
@@ -137,6 +148,10 @@ def compute_kpis(attributed: pd.DataFrame, config: dict,
         "by_market": by_market,
         "by_channel": by_channel,
         "by_market_channel": by_market_channel,
+        "by_campaign": by_campaign,
+        "by_market_campaign_type": heatmap,
+        "np_cpnp_deltas": np_cpnp,
+        "exceptions": exceptions,
         "self_referral_composition": {},   # TBD — sheet lacks the breakdown columns
         "trends": _trends(attributed, ps, rev),
     }
@@ -147,12 +162,10 @@ def compute_kpis(attributed: pd.DataFrame, config: dict,
 # -----------------------------------------------------------------------------
 
 def _online_channels(config: dict) -> set:
-    """Every channel except the offline fallback counts as online."""
     return {ch["id"] for ch in config["channels"] if not ch.get("fallback")}
 
 
 def _np_lookup(performance_summary) -> dict:
-    """{(YYYY-MM, market): new_patients_online}."""
     if performance_summary is None or performance_summary.empty:
         return {}
     out = {}
@@ -171,7 +184,6 @@ def _index_perf_summary(performance_summary):
 
 
 def _reporting_month(attributed: pd.DataFrame) -> str:
-    """Latest month with a full set of periods (>=4 weeks); else the latest month."""
     weeks = attributed.groupby("month")["period"].nunique().sort_index()
     full = weeks[weeks >= 4]
     return (full.index[-1] if not full.empty else weeks.index[-1])
@@ -211,9 +223,65 @@ def _kpi_block(all_in_cost, media_spend, online_nps, total_leads, rev) -> dict:
         "cost_per_online_new_patient": round(all_in_cost / online_nps, 2) if online_nps > 0 else None,
         "marketing_profitability": round(profit, 2),
         "blended_cpl": round(float(media_spend) / total_leads, 2) if total_leads > 0 else None,
-        # Needs self-referral / total-NP breakdown not yet in the sheet:
         "online_pct_of_self_referrals": None,
         "self_referrals_pct_of_total": None,
+    }
+
+
+def _by_campaign(ads, month) -> list:
+    """Campaign media rows for the reporting month. NP/CPNP deferred until
+    lead-to-patient tracking exists (see docs/v2-build-plan.md)."""
+    if ads is None or getattr(ads, "empty", True):
+        return []
+    df = ads.copy()
+    name_col = "campaign.name" if "campaign.name" in df.columns else "campaign_name"
+    df["month"] = df["date"].astype(str).str.slice(0, 7)
+    cur = df[df["month"] == month] if month else df
+    rows = []
+    for name, g in cur.groupby(name_col):
+        clicks = float(g["clicks"].sum())
+        spend = float(g["cost"].sum())
+        leads = float(g["conversions"].sum())
+        rows.append({
+            "name": name,
+            "market": g["market"].iloc[0] if "market" in g.columns else None,
+            "branded": bool(g["is_branded"].iloc[0]) if "is_branded" in g.columns else None,
+            "spend": round(spend, 2),
+            "clicks": int(clicks),
+            "cpc": round(spend / clicks, 2) if clicks else None,
+            "leads": int(leads),
+        })
+    rows.sort(key=lambda r: r["spend"], reverse=True)
+    return rows
+
+
+def _exceptions(by_market, heatmap, np_cpnp, config) -> dict:
+    exc = config.get("exceptions", {})
+    ceiling = exc.get("cpnp_ceiling", 600)
+    band = exc.get("cpc_wow_band_pct", 15)
+    drop = exc.get("np_drop_pct", 20)
+
+    cpnp_over, np_drops, cpc_moves = [], [], []
+    for mid, m in by_market.items():
+        v = m.get("cost_per_online_new_patient")
+        if v is not None and v > ceiling:
+            cpnp_over.append({"market": mid, "value": v, "ceiling": ceiling})
+    for mid, d in np_cpnp.items():
+        p = d["np"]["pct"]
+        if p is not None and p <= -drop:
+            np_drops.append({"market": mid, "cur": d["np"]["cur"], "prev": d["np"]["prev"], "pct": p})
+    for mid, cell in heatmap.items():
+        for label in ("branded", "nonbranded"):
+            c = cell.get(label) or {}
+            p = c.get("pct")
+            if p is not None and abs(p) >= band:
+                cpc_moves.append({"market": mid, "type": label, "cpc": c["cpc"], "pct": p})
+
+    return {
+        "cpnp_over_ceiling": cpnp_over,
+        "np_drops": np_drops,
+        "cpc_moves": cpc_moves,
+        "total": len(cpnp_over) + len(np_drops) + len(cpc_moves),
     }
 
 

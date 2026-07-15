@@ -190,14 +190,15 @@ def render_all(kpis: dict, attributed: pd.DataFrame, config: dict, quality,
                 "charts": _mc_charts(attributed, mk["id"], ch["id"]),
             })
 
-    # ---- v2: exceptions + campaigns ----
-    ads = raw.get("google_ads") if raw else None
-    heatmap, campaigns = _campaign_intel(ads, config, months)
-    exceptions = _exceptions(kpis, config, months, heatmap)
+    # ---- v2: exceptions + campaigns (formatted from compute_kpis blocks) ----
+    heatmap = _heatmap_view(kpis, config)
+    exceptions = _exceptions_view(kpis, config)
+    campaigns = _campaigns_view(kpis, config)
+    vs_label = f"{heatmap['cur']} vs {heatmap['prev']}" if heatmap.get("prev") else heatmap.get("cur", "")
 
     _write(env, "exceptions.html", OUTPUT_DIR / "exceptions.html", {
         **base_ctx, "rel": "",
-        "page": {"title": "Exceptions", "subtitle": f"What moved · {header['period_label']} vs prior month",
+        "page": {"title": "Exceptions", "subtitle": f"What moved · {vs_label}",
                  "nav_active": "exceptions", "show_title": True, "breadcrumb": None},
         "exceptions": exceptions, "heatmap": heatmap,
         "charts": {},
@@ -414,13 +415,12 @@ def _funnel(attributed, month, market=None, channel=None):
     leads = float(df["leads"].sum())
     nps = float(df["online_nps_attributed"].sum())
     cpc = spend / clicks if clicks else 0
-    c2s = sessions / clicks if clicks else 0
     lrate = leads / sessions if sessions else 0
     l2np = nps / leads if leads else 0
     return [
         {"label": "Spend", "value": _money(spend), "note": "media only"},
         {"label": "Clicks", "value": _int(clicks), "note": f"{_money(cpc, 2)} CPC" if clicks else "—"},
-        {"label": "Sessions", "value": _int(sessions), "note": f"{c2s*100:.0f}% click→session" if clicks else "organic + paid"},
+        {"label": "Sessions", "value": _int(sessions), "note": "paid + organic"},
         {"label": "Leads", "value": _int(leads), "note": f"{lrate*100:.1f}% lead rate" if sessions else "—"},
         {"label": "New Patients", "value": _int(round(nps)), "note": f"{l2np*100:.0f}% lead→NP" if leads else "—"},
     ]
@@ -539,145 +539,103 @@ def _mc_charts(attributed, mid, cid):
 
 
 # =============================================================================
-# v2: campaign intel (heatmap + campaign table) and exceptions
+# v2 view builders — format compute_kpis numeric blocks into template shapes
 # =============================================================================
-def _market_of(name: str, config: dict):
-    for mk in config["markets"]:          # config order respects Ohio-before-Colorado
-        for tok in mk.get("match", []):
-            if tok.lower() in name.lower():
-                return mk["id"], mk["label"]
-    return None, None
+def _mk_label(config, mid):
+    for m in config["markets"]:
+        if m["id"] == mid:
+            return m["label"]
+    return mid or "—"
 
 
-def _is_nonbrand(name: str) -> bool:
-    n = name.lower()
-    return ("non-brand" in n) or ("non brand" in n) or ("nonbrand" in n)
-
-
-def _campaign_intel(ads, config, months):
-    """Returns (heatmap dict, campaign rows). Heatmap: market x {Brand, Non-Brand}
-    CPC for the reporting month with MoM delta vs prior month."""
-    if ads is None or getattr(ads, "empty", True):
-        return {"rows": [], "empty": True}, []
-
-    df = ads.copy()
-    name_col = "campaign.name" if "campaign.name" in df.columns else "campaign_name"
-    df["month"] = df["date"].astype(str).str.slice(0, 7)
-    df["mkt_id"], df["mkt_label"] = zip(*df[name_col].map(lambda n: _market_of(n, config)))
-    df["ctype"] = df[name_col].map(lambda n: "Non-Brand" if _is_nonbrand(n) else "Brand")
-
-    cur = months[-1] if months else None
-    prev = months[-2] if len(months) >= 2 else None
-    band = config.get("exceptions", {}).get("cpc_wow_band_pct", 15)
-
-    def cpc(sub):
-        clicks = sub["clicks"].sum()
-        return (sub["cost"].sum() / clicks) if clicks else None
-
-    # ---- heatmap ----
-    rows = []
-    for mk in config["markets"]:
-        mid = mk["id"]
-        sub_m = df[df["mkt_id"] == mid]
-        if sub_m.empty:
-            continue
-        cells = []
-        for ctype in ("Brand", "Non-Brand"):
-            s = sub_m[sub_m["ctype"] == ctype]
-            cur_cpc = cpc(s[s["month"] == cur]) if cur else None
-            prev_cpc = cpc(s[s["month"] == prev]) if prev else None
-            cells.append(_heat_cell(cur_cpc, prev_cpc, band))
-        rows.append({"market": mk["label"], "cells": cells})
-    heatmap = {"rows": rows, "empty": not rows, "band": band,
-               "cur": _month_label(cur) if cur else "", "prev": _month_label(prev) if prev else ""}
-
-    # ---- campaign table (reporting month) ----
-    campaigns = []
-    cur_df = df[df["month"] == cur] if cur else df
-    for name, g in cur_df.groupby(name_col):
-        clicks = float(g["clicks"].sum())
-        spend = float(g["cost"].sum())
-        leads = float(g["conversions"].sum())
-        campaigns.append({
-            "name": name, "market": g["mkt_label"].iloc[0] or "—",
-            "type": "Non-Brand" if _is_nonbrand(name) else "Brand",
-            "spend": _money(spend), "clicks": _int(clicks),
-            "cpc": _money(spend / clicks, 2) if clicks else "—",
-            "leads": _int(leads),
-            "_spend": spend,
-        })
-    campaigns.sort(key=lambda c: c["_spend"], reverse=True)
-    for c in campaigns:
-        c.pop("_spend", None)
-    return heatmap, campaigns
-
-
-def _heat_cell(cur_cpc, prev_cpc, band):
-    if cur_cpc is None:
+def _heat_cell(c, band):
+    if not c or c.get("cpc") is None:
         return {"cpc": "—", "wow": "", "cls": "heat-na"}
-    if prev_cpc is None or prev_cpc == 0:
-        return {"cpc": _money(cur_cpc, 2), "wow": "new", "cls": "heat-flat"}
-    delta = (cur_cpc - prev_cpc) / prev_cpc * 100
-    arrow = "▲" if delta > 0 else ("▼" if delta < 0 else "—")
-    if delta <= -band:
+    cpc = c["cpc"]
+    pct = c.get("pct")
+    if pct is None:
+        return {"cpc": _money(cpc, 2), "wow": "new", "cls": "heat-flat"}
+    arrow = "▲" if pct > 0 else ("▼" if pct < 0 else "—")
+    if pct <= -band:
         cls = "heat-down2"
-    elif delta < 0:
+    elif pct < 0:
         cls = "heat-down1"
-    elif delta >= band:
+    elif pct >= band:
         cls = "heat-up2"
-    elif delta > 0:
+    elif pct > 0:
         cls = "heat-up1"
     else:
         cls = "heat-flat"
-    return {"cpc": _money(cur_cpc, 2), "wow": f"{arrow} {abs(delta):.0f}%", "cls": cls}
+    return {"cpc": _money(cpc, 2), "wow": f"{arrow} {abs(pct):.0f}%", "cls": cls}
 
 
-def _exceptions(kpis, config, months, heatmap):
-    cfg = config.get("exceptions", {})
-    ceiling = cfg.get("cpnp_ceiling", 600)
-    np_drop = cfg.get("np_drop_pct", 20)
-    band = cfg.get("cpc_wow_band_pct", 15)
+def _heatmap_view(kpis, config):
+    hm = kpis.get("by_market_campaign_type") or {}
+    band = config.get("exceptions", {}).get("cpc_wow_band_pct", 15)
+    rows = []
+    for m in config["markets"]:
+        cell = hm.get(m["id"])
+        if not cell:
+            continue
+        rows.append({"market": m["label"],
+                     "cells": [_heat_cell(cell.get("branded"), band),
+                               _heat_cell(cell.get("nonbranded"), band)]})
+    meta = kpis.get("meta", {})
+    return {"rows": rows, "empty": not rows, "band": band,
+            "cur": _month_label(meta.get("reporting_period", "")),
+            "prev": _month_label(meta["prior_period"]) if meta.get("prior_period") else ""}
+
+
+def _campaigns_view(kpis, config):
+    out = []
+    for c in kpis.get("by_campaign", []):
+        branded = c.get("branded")
+        ctype = "Non-Brand" if branded is False else ("Brand" if branded else "—")
+        out.append({
+            "name": c["name"],
+            "market": _mk_label(config, c["market"]) if c.get("market") else "—",
+            "type": ctype,
+            "spend": _money(c["spend"]),
+            "clicks": _int(c["clicks"]),
+            "cpc": _money(c["cpc"], 2) if c.get("cpc") is not None else "—",
+            "leads": _int(c["leads"]),
+        })
+    return out
+
+
+def _exceptions_view(kpis, config):
+    exc = kpis.get("exceptions", {})
+    ec = config.get("exceptions", {})
+    ceiling = ec.get("cpnp_ceiling", 600)
+    band = ec.get("cpc_wow_band_pct", 15)
+    drop = ec.get("np_drop_pct", 20)
     groups = []
 
-    # CPNP over ceiling (by market)
-    cpnp_hits = []
-    for mid, mtr in kpis["by_market"].items():
-        v = mtr.get("cost_per_online_new_patient")
-        if v is not None and v > ceiling:
-            label = next((m["label"] for m in config["markets"] if m["id"] == mid), mid)
-            cpnp_hits.append({"what": label, "detail": f"Cost per online new patient above ${ceiling:,.0f} ceiling",
-                              "metric": _money(v), "move": "over ceiling", "move_cls": "bad", "sev": "sev-alert"})
-    groups.append({"title": f"CPNP over ${ceiling:,.0f} ceiling", "cards": cpnp_hits})
+    cards = [{"what": _mk_label(config, e["market"]),
+              "detail": f"Cost per online new patient above ${ceiling:,.0f} ceiling",
+              "metric": _money(e["value"]), "move": "over ceiling",
+              "move_cls": "bad", "sev": "sev-alert"}
+             for e in exc.get("cpnp_over_ceiling", [])]
+    groups.append({"title": f"CPNP over ${ceiling:,.0f} ceiling", "cards": cards})
 
-    # NP volume drops (market, MoM)
-    drops = []
-    cur, prev = (months[-1], months[-2]) if len(months) >= 2 else (None, None)
-    if cur and prev:
-        for mid, series in kpis["trends"]["nps_by_market_month"].items():
-            c, p = series.get(cur), series.get(prev)
-            if c is not None and p:
-                d = (c - p) / p * 100
-                if d <= -np_drop:
-                    label = next((m["label"] for m in config["markets"] if m["id"] == mid), mid)
-                    drops.append({"what": label, "detail": f"New patients down vs prior month ({int(p)} → {int(c)})",
-                                  "metric": f"{d:.0f}%", "move": "MoM", "move_cls": "bad", "sev": "sev-alert"})
-    groups.append({"title": f"New-patient volume down > {np_drop}% (MoM)", "cards": drops})
+    cards = [{"what": _mk_label(config, e["market"]),
+              "detail": f"New patients down vs prior month ({int(e['prev'])} → {int(e['cur'])})",
+              "metric": f"{e['pct']:.0f}%", "move": "MoM", "move_cls": "bad", "sev": "sev-alert"}
+             for e in exc.get("np_drops", [])]
+    groups.append({"title": f"New-patient volume down > {drop}% (MoM)", "cards": cards})
 
-    # CPC moves beyond band (from heatmap)
-    cpc_moves = []
-    for r in heatmap.get("rows", []):
-        for ctype, cell in zip(("Brand", "Non-Brand"), r["cells"]):
-            if cell["cls"] in ("heat-up2", "heat-down2"):
-                bad = cell["cls"] == "heat-up2"
-                cpc_moves.append({"what": f"{r['market']} · {ctype}",
-                                  "detail": f"CPC moved beyond ±{band}% vs prior month",
-                                  "metric": cell["cpc"], "move": cell["wow"],
-                                  "move_cls": "bad" if bad else "good",
-                                  "sev": "sev-alert" if bad else "sev-watch"})
-    groups.append({"title": f"CPC moved beyond ±{band}% (MoM)", "cards": cpc_moves})
+    cards = []
+    for e in exc.get("cpc_moves", []):
+        up = e["pct"] > 0
+        cards.append({"what": f"{_mk_label(config, e['market'])} · {'Non-Brand' if e['type'] == 'nonbranded' else 'Brand'}",
+                      "detail": f"CPC moved beyond ±{band}% vs prior month",
+                      "metric": _money(e["cpc"], 2),
+                      "move": f"{'▲' if up else '▼'} {abs(e['pct']):.0f}%",
+                      "move_cls": "bad" if up else "good",
+                      "sev": "sev-alert" if up else "sev-watch"})
+    groups.append({"title": f"CPC moved beyond ±{band}% (MoM)", "cards": cards})
 
-    total = sum(len(g["cards"]) for g in groups)
-    return {"groups": groups, "total": total}
+    return {"groups": groups, "total": exc.get("total", 0)}
 
 
 def _write_quality_json(quality, kpis):
