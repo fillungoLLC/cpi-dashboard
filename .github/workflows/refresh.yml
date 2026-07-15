@@ -50,6 +50,8 @@ jobs:
           GSHEETS_SA_JSON:  ${{ secrets.GSHEETS_SA_JSON }}
           # Delivery
           SLACK_CPI_WEBHOOK: ${{ secrets.SLACK_CPI_WEBHOOK }}
+          # gh-pages deploy uses the Actions-provided token (job has contents: write)
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           ARGS=""
           if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then ARGS="$ARGS --dry-run"; fi
