@@ -4,7 +4,7 @@ Portable context so any machine or fresh Cowork session can pick up. (Cowork pro
 memory is local-only and does NOT sync across computers, so this file is the source of
 truth — keep it committed in the repo.)
 
-_Last updated: 2026-07-15._
+_Last updated: 2026-07-17._
 
 ## What this is
 Weekly performance dashboard for CPI Health (Capitol Pain Institute), a Fillungo client.
@@ -56,7 +56,7 @@ of that already works; turning on real data is a data-source swap only (no templ
   Deltas use a prior snapshot if present, else within-run month-over-month.
 
 ## Known follow-ups (not blocking)
-- Funnel still mixes paid-only clicks with all-channel sessions/leads/NPs (only the label was fixed).
+- ~~Funnel mixes paid-only clicks with all-channel sessions/leads/NPs~~ RESOLVED 2026-07-17: `_funnel` now shows the Spend/Clicks head only when scope is paid_search; market-level and non-paid channels start at Sessions. Test in `tests/test_v2_kpis.py::test_funnel_scope_consistency`.
 - True cross-run deltas need snapshot persistence across CI runs (seam exists via
   `store/snapshots.load_previous`; CI currently falls back to MoM).
 - Agency fee `$22,850` + 60/40 paid/organic split in config are unconfirmed placeholders.
@@ -69,3 +69,11 @@ of that already works; turning on real data is a data-source swap only (no templ
   changed files as a zip that Scott `unzip -o`s into the repo.
 - Cloud-synced `.git` leaves stray `*.lock` files the sandbox can't `rm` (unlink blocked) —
   clear them with `mv` instead.
+- Git tangle after a bad sync: the Drive `.git` can end up with unreadable objects
+  (`git log` fails "Could not read <sha> / Failed to traverse parents"). Don't try to
+  repair in place — clone fresh from origin and work in `/tmp`. To reconcile local work
+  onto a clean history, `git checkout -B main origin/main` (force-recreate main at origin),
+  reapply changed files, commit, push via GitHub Desktop.
+- Chrome (Claude-in-Chrome) intermittently drops its connection mid-session; the tab
+  context goes stale and calls fail silently. Re-establish with `tabs_context_mcp` (or
+  reopen the tab) before assuming a page is broken — it's usually the connection, not the page.

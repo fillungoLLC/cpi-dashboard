@@ -98,3 +98,29 @@ def test_np_cpnp_deltas_structure(built, config):
 def test_load_previous_none_when_empty(tmp_path, monkeypatch):
     monkeypatch.setattr(snapshots, "SNAPSHOT_DIR", tmp_path / "none")
     assert snapshots.load_previous() is None
+
+
+# --- funnel scope consistency (paid-media head only when scope is paid) --------
+def test_funnel_scope_consistency(built):
+    from render import renderer
+
+    att = built["attributed"]
+    month = sorted(att["month"].unique())[-1]
+    market = sorted(att["market"].unique())[0]
+
+    def labels(steps):
+        return [s["label"] for s in steps]
+
+    # Market-level rollup: no paid-only head; sessions/leads/NPs are all-channel.
+    market_steps = renderer._funnel(att, month, market=market)
+    assert labels(market_steps) == ["Sessions", "Leads", "New Patients"]
+    assert market_steps[0]["note"] == "all channels"
+
+    # Paid search channel: full paid funnel with Spend/Clicks head.
+    paid_steps = renderer._funnel(att, month, market=market, channel="paid_search")
+    assert labels(paid_steps) == ["Spend", "Clicks", "Sessions", "Leads", "New Patients"]
+    assert paid_steps[2]["note"] == "paid search"
+
+    # Non-paid channel: no misleading $0 Spend / 0 Clicks head.
+    organic_steps = renderer._funnel(att, month, market=market, channel="organic")
+    assert labels(organic_steps) == ["Sessions", "Leads", "New Patients"]

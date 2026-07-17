@@ -409,21 +409,34 @@ def _funnel(attributed, month, market=None, channel=None):
         df = df[df["market"] == market]
     if channel:
         df = df[df["channel"] == channel]
-    spend = float(df["media_spend"].sum())
-    clicks = float(df["clicks"].sum())
     sessions = float(df["sessions"].sum())
     leads = float(df["leads"].sum())
     nps = float(df["online_nps_attributed"].sum())
-    cpc = spend / clicks if clicks else 0
     lrate = leads / sessions if sessions else 0
     l2np = nps / leads if leads else 0
-    return [
-        {"label": "Spend", "value": _money(spend), "note": "media only"},
-        {"label": "Clicks", "value": _int(clicks), "note": f"{_money(cpc, 2)} CPC" if clicks else "—"},
-        {"label": "Sessions", "value": _int(sessions), "note": "paid + organic"},
-        {"label": "Leads", "value": _int(leads), "note": f"{lrate*100:.1f}% lead rate" if sessions else "—"},
-        {"label": "New Patients", "value": _int(round(nps)), "note": f"{l2np*100:.0f}% lead→NP" if leads else "—"},
-    ]
+
+    steps = []
+    # Paid-media head (Spend, Clicks) only when the funnel scope IS paid media.
+    # media_spend and clicks land only on paid_search rows, so including them in a
+    # market-level or non-paid-channel funnel would stack paid-only counts on top of
+    # all-channel sessions/leads/NPs — a funnel that doesn't describe one real flow.
+    if channel == "paid_search":
+        spend = float(df["media_spend"].sum())
+        clicks = float(df["clicks"].sum())
+        cpc = spend / clicks if clicks else 0
+        steps.append({"label": "Spend", "value": _money(spend), "note": "media only"})
+        steps.append({"label": "Clicks", "value": _int(clicks),
+                      "note": f"{_money(cpc, 2)} CPC" if clicks else "—"})
+        session_note = "paid search"
+    else:
+        session_note = "all channels" if channel is None else "channel traffic"
+
+    steps.append({"label": "Sessions", "value": _int(sessions), "note": session_note})
+    steps.append({"label": "Leads", "value": _int(leads),
+                  "note": f"{lrate*100:.1f}% lead rate" if sessions else "—"})
+    steps.append({"label": "New Patients", "value": _int(round(nps)),
+                  "note": f"{l2np*100:.0f}% lead→NP" if leads else "—"})
+    return steps
 
 
 # =============================================================================

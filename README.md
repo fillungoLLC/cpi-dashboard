@@ -100,12 +100,23 @@ The short version: install dependencies (`pip install -r requirements.txt`), set
 
 ---
 
-## What's deferred to v2
+## Shipped in v2
 
+- Channel drilldowns for Organic, GBP, and Direct on every market page
+- Collapsible 13-week trend charts (config flag `display.trends`)
+- Week-over-week deltas (`transform/deltas.py`)
+- CPC heatmap (market x brand/non-brand, colored by WoW movement)
+- Exceptions surface (replaces the enterprise aggregate page)
+- Campaign drilldown - media side (spend / clicks / CPC / leads per campaign)
+
+## Still deferred (post-v2)
+
+- Campaign-level new-patient attribution - gated on lead-to-patient tracking
+  (gclid/UTM capture at form + call, matched at intake). `attribute_np.py`
+  DIRECT mode is stubbed for when that data exists.
 - HubSpot data integration (stub exists)
 - BigQuery as the canonical store (currently Google Sheets)
 - Date range pickers (currently weekly + monthly fixed grain)
-- Campaign-level drilldown pages (slot reserved)
 - Email delivery alongside Slack
 - Real per-patient source attribution (proportional fallback in place)
 
