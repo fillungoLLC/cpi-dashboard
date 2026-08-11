@@ -115,29 +115,40 @@ new_patient_taxonomy:
 # MARKETS — order matters for substring matching (Ohio before Colorado)
 # -----------------------------------------------------------------------------
 markets:
-  - id: kentucky
-    label: Kentucky
-    match: [KY, Louisville, Lexington]
-  - id: ohio                        # MUST precede colorado
-    label: Ohio
-    match: [OH, Columbus, Pickerington, "New Albany"]
-    notes: "Fillungo-managed campaigns only; R55 pilot tracked separately"
-  - id: colorado
-    label: Colorado
-    match: [CO, Denver]
-  - id: texas
-    label: Texas
-    match: [TX, Austin]
+  # ORDER MATTERS — first token match wins (transform/normalize_markets._classify).
+  #
+  # Tokens are substring-matched against BOTH Google Ads campaign names and GA4
+  # city names, so bare two-letter state codes are unusable: "CO" matched "Max
+  # Conv", "IN" matched Cincinnati / Huntington / Princeton / Elgin, and "KY"
+  # matched Kyle, Texas. In the 2026-07 snapshot that misrouted $17,256 of media
+  # (7.4%) and 137 of Indiana's 182 GA4 conversions. Use the "XX - " campaign
+  # prefix plus explicit city names instead; never the bare code.
+  #
+  # indiana MUST precede ohio: "Wellspring - Columbus" is Columbus, INDIANA.
+  # The "Indiana" token also catches the ga4_wellspring market_override value.
   - id: indiana
     label: Indiana
     brand: "Wellspring Pain Solutions"
     ga4_property_ref: wellspring
-    match: [IN, Indianapolis]
+    match: [Wellspring, Indiana, Bloomington, Greenwood, "Terre Haute", Munster, Chesterton]
+  - id: kentucky
+    label: Kentucky
+    match: ["KY - ", Louisville, Elizabethtown, Lexington]
+  - id: ohio
+    label: Ohio
+    match: ["OH - ", Columbus, Pickerington, "New Albany"]
+    notes: "Fillungo-managed campaigns only; R55 excluded in transform/exclude_campaigns.py"
+  - id: colorado
+    label: Colorado
+    match: ["CO - ", Denver, Colorado]
+  - id: texas
+    label: Texas
+    match: ["TX - ", Austin, Killeen, Bastrop, Georgetown, "Bee Cave", "San Marcos"]
   - id: minnesota
     label: Minnesota
     brand: "Nuro"
     status: tbd                     # Cards render "TBD"; no data sources wired
-    match: [MN, Minneapolis, "St Paul", "Saint Paul"]
+    match: ["MN - ", Minneapolis, "St Paul", "Saint Paul"]
 
 # -----------------------------------------------------------------------------
 # CHANNELS — collapsed groupings; GA4 dimension mapping
