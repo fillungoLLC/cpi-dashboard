@@ -41,6 +41,7 @@ def test_campaign_names(campaign, expected):
 # --- GA4 city names -----------------------------------------------------------
 @pytest.mark.parametrize("city,expected", [
     ("San Marcos",       "texas"),          # was colorado, via "co"
+    ("Kyle",             "texas"),          # was KENTUCKY, via "KY" (confirmed TX)
     ("Austin",           "texas"),
     ("Denver",           "colorado"),
     ("Colorado Springs", "colorado"),
@@ -54,11 +55,6 @@ def test_ga4_cities(city, expected):
 
 
 @pytest.mark.parametrize("city", [
-    # Kyle, TX sits between Austin and San Marcos and was being filed as
-    # KENTUCKY via the "KY" substring — 19 conversions in July. It is not in
-    # the Texas city list, so it now falls out as unclassified. Whether it
-    # should count toward Texas is a market-definition call for Scott.
-    "Kyle",
     "Cincinnati", "Huntington", "Princeton", "Elgin", "Mount Washington",
     "Fountain", "Aitkin", "Al Ain", "Alcoa", "Alvin", "Amelia Court House",
     "Altamonte Springs",

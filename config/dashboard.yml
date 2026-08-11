@@ -143,7 +143,7 @@ markets:
     match: ["CO - ", Denver, Colorado]
   - id: texas
     label: Texas
-    match: ["TX - ", Austin, Killeen, Bastrop, Georgetown, "Bee Cave", "San Marcos"]
+    match: ["TX - ", Austin, Killeen, Bastrop, Georgetown, "Bee Cave", "San Marcos", Kyle]
   - id: minnesota
     label: Minnesota
     brand: "Nuro"
@@ -416,7 +416,13 @@ display:
   trends: collapsed          # collapsed | expanded
 
 exceptions:
-  cpnp_ceiling: 400          # flag market/channel CPNP above this ($)
+  # Raised from 400 to 800 in Aug 2026. The old figure predated the current
+  # strategy and was too low even then — CPI is deliberately buying volume at
+  # the expense of efficiency, so a market above the old line was usually
+  # following the plan rather than failing. At $800 the July snapshot flags
+  # Colorado ($1,836) and Texas ($1,382) and leaves Kentucky, Ohio, and
+  # Indiana clear, which is the signal worth acting on.
+  cpnp_ceiling: 800          # flag market/channel CPNP above this ($)
   cpc_wow_band_pct: 15       # flag campaigns moving more than ±this % vs prior period
   np_drop_pct: 20            # flag markets with NP down more than this % vs prior period
 
