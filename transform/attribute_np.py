@@ -98,6 +98,8 @@ def compute_kpis(attributed: pd.DataFrame, config: dict,
         online_nps=_month_np(ps, reporting_month, month_rows),
         total_leads=_month_leads(ps, reporting_month, month_rows),
         rev=rev,
+        total_referred=_month_stage(ps, reporting_month, "total_referred"),
+        total_scheduled=_month_stage(ps, reporting_month, "total_scheduled"),
     )
 
     by_market = {}
@@ -108,6 +110,8 @@ def compute_kpis(attributed: pd.DataFrame, config: dict,
             online_nps=_month_np(ps, reporting_month, m, market=market),
             total_leads=_month_leads(ps, reporting_month, m, market=market),
             rev=rev,
+            total_referred=_month_stage(ps, reporting_month, "total_referred", market=market),
+            total_scheduled=_month_stage(ps, reporting_month, "total_scheduled", market=market),
         )
 
     by_channel = {}
@@ -209,7 +213,23 @@ def _month_leads(ps, month, rows, market=None) -> float:
     return float(rows["leads"].sum())
 
 
-def _kpi_block(all_in_cost, media_spend, online_nps, total_leads, rev) -> dict:
+def _month_stage(ps, month, column, market=None):
+    """Intermediate funnel stage (total_referred / total_scheduled) for a
+    market-month. Returns None when the sheet doesn't carry the column, so the
+    renderer can omit the stage rather than draw a zero. There is no channel
+    equivalent — these are market-level counts only."""
+    if ps is None or column not in ps.columns:
+        return None
+    sel = ps[ps["ym"] == month]
+    if market is not None:
+        sel = sel[sel["market"] == market]
+    if sel.empty:
+        return None
+    return float(sel[column].sum())
+
+
+def _kpi_block(all_in_cost, media_spend, online_nps, total_leads, rev,
+               total_referred=None, total_scheduled=None) -> dict:
     all_in_cost = float(all_in_cost)
     online_nps = float(online_nps)
     revenue = online_nps * rev
@@ -217,6 +237,8 @@ def _kpi_block(all_in_cost, media_spend, online_nps, total_leads, rev) -> dict:
     return {
         "online_new_patients": round(online_nps, 1),
         "total_leads": int(round(total_leads)),
+        "total_referred": None if total_referred is None else int(round(total_referred)),
+        "total_scheduled": None if total_scheduled is None else int(round(total_scheduled)),
         "all_in_cost": round(all_in_cost, 2),
         "media_spend": round(float(media_spend), 2),
         "roi": round(profit / all_in_cost, 4) if all_in_cost > 0 else None,

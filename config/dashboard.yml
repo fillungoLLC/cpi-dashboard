@@ -30,8 +30,12 @@ assumptions:
     - media_spend          # Google Ads media only
     - agency_fees          # Fillungo monthly retainer
   # Note: partner costs (Evan) intentionally excluded — see docs/architecture.md
-  # CONFIRM WITH SCOTT: retainer figure and split below drive all_in_cost in
-  # transform/join_costs.py. The $22,850 is the retainer net of partner cost.
+  #
+  # FALLBACK ONLY. When the staging Sheet has a `costs` tab, that tab is
+  # authoritative and everything below is ignored (transform/join_costs.py).
+  # These two remain unconfirmed placeholders and should not be trusted to
+  # produce real ROI — they exist so the pipeline still renders if the costs
+  # tab is missing. Prefer fixing the tab over tuning these.
   agency_fee_monthly: 22850
   agency_fee_channel_split:           # how the retainer is allocated across channels
     paid_search: 0.60
@@ -190,6 +194,24 @@ data_sources:
     tab: live
     role: source_of_truth_for_new_patients
     columns: [year, month, market, new_patients_online, total_leads, paid_conversions, organic_conversions]
+    # Intake funnel stages. Optional — absent from sheets before Aug 2026.
+    # total_scheduled counts appointments booked to OCCUR in the month, so an
+    # open month is forward-booked and keeps growing; only closed months are
+    # comparable. Rows with a blank new_patients_online are dropped at
+    # ingestion so a placeholder month reads as missing, not as zero.
+    optional_columns: [total_referred, total_scheduled]
+
+  - id: costs
+    type: gsheet
+    tab: costs
+    required: false
+    role: source_of_truth_for_fees
+    columns: [year, month, market, total_fee]
+    optional_columns: [seo_fee]
+    # Authoritative when present: overrides assumptions.agency_fee_monthly and
+    # agency_fee_channel_split. Media spend is NOT here — it comes from Google
+    # Ads at campaign grain, and a second hand-entered figure would contradict
+    # the campaigns page and the CPC heatmap.
 
   - id: hubspot
     type: hubspot_api
@@ -199,6 +221,15 @@ data_sources:
 # TRANSFORMS — order of operations
 # -----------------------------------------------------------------------------
 transforms:
+  # MUST run before normalize_markets. R55 is the competing agency on the Ohio
+  # pilot; their campaigns target Columbus / Pickerington / New Albany, so the
+  # market classifier would file their spend under `ohio` and overstate
+  # Fillungo's cost per new patient there. Matching is case-insensitive
+  # substring on campaign name, same rule the cpi-recap skill uses.
+  - step: exclude_campaigns
+    applies_to: [google_ads]
+    exclude_matching: ["R55"]
+
   - step: normalize_markets
     applies_to: [ga4_cpi, ga4_wellspring, google_ads]
     logic: market_classifier_with_ohio_before_colorado
@@ -249,6 +280,10 @@ quality_checks:
         - columns_present
         - new_patients_non_negative
         - market_in_allowlist
+    - source: costs
+      checks:
+        - columns_present
+        - market_in_allowlist
 
   transform:
     - step: normalize_markets
@@ -259,6 +294,11 @@ quality_checks:
       tolerance: 0.01
     - step: join_costs_to_conversions
       check: no_row_multiplication
+    - step: join_costs_coverage
+      check: costs_cover_spend
+      # Error when the reporting month has a market with spend but no fee row
+      # (its ROI would be overstated); warning for earlier trend-window months.
+      severity: error
 
   output:
     - check: roi_change_period_over_period_within

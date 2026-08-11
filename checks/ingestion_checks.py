@@ -23,6 +23,11 @@ REQUIRED_COLUMNS = {
         "year", "month", "market",
         "new_patients_online", "total_leads", "paid_conversions", "organic_conversions",
     },
+    # total_referred / total_scheduled are deliberately NOT required — they
+    # arrived mid-2026 and an older sheet should still ingest.
+    # seo_fee is optional and only carves total_fee across channels —
+    # see ingest/staging_sheet.COSTS_NULLABLE_NUMERIC.
+    "costs": {"year", "month", "market", "total_fee"},
 }
 
 

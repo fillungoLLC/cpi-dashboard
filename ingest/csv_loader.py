@@ -32,6 +32,8 @@ NUMERIC_COLUMNS = [
     "year", "month",
     "new_patients_online", "total_leads", "paid_conversions", "organic_conversions",
 ]
+# Optional intake stages — see ingest/staging_sheet.PERF_OPTIONAL_NUMERIC.
+OPTIONAL_NUMERIC_COLUMNS = ["total_referred", "total_scheduled"]
 
 
 def fetch_from_gsheet(config: dict) -> pd.DataFrame:
@@ -71,7 +73,19 @@ def _sheet_tab(config: dict) -> str:
 
 
 def _coerce_types(df: pd.DataFrame) -> pd.DataFrame:
-    for col in NUMERIC_COLUMNS:
+    # Placeholder rows (a month listed before its numbers land) are dropped
+    # while a blank is still distinguishable from a real zero. Matches the
+    # staging-Sheet path so both ingestion routes agree.
+    if "new_patients_online" in df.columns:
+        blank = df["new_patients_online"].isna() | (
+            df["new_patients_online"].astype(str).str.strip().isin(["", "None", "nan"])
+        )
+        if blank.any():
+            log.warning(f"performance_summary: dropped {int(blank.sum())} placeholder row(s) "
+                        "with a blank new_patients_online")
+            df = df.loc[~blank].copy()
+
+    for col in NUMERIC_COLUMNS + OPTIONAL_NUMERIC_COLUMNS:
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors="coerce")
     if "market" in df.columns:

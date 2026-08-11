@@ -6,7 +6,7 @@
 
   <div class="section-label">Acquisition Funnel · {{ page.title }}</div>
   <div class="panel">
-    <div class="panel-title">Spend → Clicks → Sessions → Leads → New Patients</div>
+    <div class="panel-title">{{ funnel_steps | map(attribute="label") | join(" → ") }}</div>
     <div class="panel-sub">{{ header.period_label }}</div>
     {{ m.funnel(funnel_steps) }}
   </div>

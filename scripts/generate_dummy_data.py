@@ -183,6 +183,11 @@ def _gen_performance_summary(rng: Random, months: list[str], markets: dict) -> p
             total_leads = max(np_online + 1, round(_jitter(rng, mk["leads"], 0.15)))
             paid_conv = round(total_leads * rng.uniform(0.38, 0.46))
             organic_conv = round(total_leads * rng.uniform(0.26, 0.34))
+            # Intake stages sit between leads and new patients and narrow
+            # monotonically, so the dummy funnel renders the shape the real
+            # sheet produces.
+            referred = max(np_online, round(total_leads * rng.uniform(0.45, 0.80)))
+            scheduled = max(np_online, round(referred * rng.uniform(0.55, 0.85)))
             rows.append({
                 "year": year,
                 "month": month,
@@ -191,10 +196,13 @@ def _gen_performance_summary(rng: Random, months: list[str], markets: dict) -> p
                 "total_leads": total_leads,
                 "paid_conversions": paid_conv,
                 "organic_conversions": organic_conv,
+                "total_referred": referred,
+                "total_scheduled": scheduled,
             })
     return pd.DataFrame(rows, columns=[
         "year", "month", "market",
         "new_patients_online", "total_leads", "paid_conversions", "organic_conversions",
+        "total_referred", "total_scheduled",
     ])
 
 

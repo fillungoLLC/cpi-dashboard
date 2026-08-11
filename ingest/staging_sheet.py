@@ -54,6 +54,40 @@ PERF_NUMERIC = [
     "new_patients_online", "total_leads",
     "paid_conversions", "organic_conversions",
 ]
+# Funnel stages the client sheet started carrying in Aug 2026. Optional, so an
+# older sheet still ingests; coerced to numeric only when present.
+#
+# NOTE on total_scheduled: it counts appointments on the books to OCCUR in that
+# month, so an open or future month is forward-booked and keeps growing. It is
+# only comparable to the other columns for a CLOSED month, which is why the
+# funnel renders for the reporting month only (renderer._funnel), and
+# _reporting_month already restricts that to a month with 4+ complete weeks.
+PERF_OPTIONAL_NUMERIC = ["total_referred", "total_scheduled"]
+
+# A month often appears in the sheet as a placeholder before its numbers land.
+# Blank coerces to 0 and then reads downstream as a real zero — a 0-new-patient,
+# -100% ROI point on the trend charts. Drop placeholder rows at ingestion so a
+# month with no data is missing rather than zero.
+PERF_REQUIRED_VALUE = "new_patients_online"
+
+# Optional per-market monthly fee tab. When present it is AUTHORITATIVE and
+# replaces the synthetic agency_fee_monthly / 60-40 split in dashboard.yml.
+# Media spend is deliberately not here — it comes from Google Ads at campaign
+# grain, and a second hand-entered spend figure would contradict it.
+# `total_fee` is the market's TOTAL Fillungo fee for the month and is always
+# authoritative — it is what overview and market-level ROI, cost per new
+# patient, and profitability are computed from.
+#
+# `seo_fee` is OPTIONAL and only carves that total across channels:
+#   present -> organic carries seo_fee, paid_search carries the remainder
+#   blank   -> the total is split by assumptions.agency_fee_channel_split
+# So the breakout changes channel-level cost attribution and nothing else. A
+# blank cell means "unknown, split it"; an explicit 0 means "no SEO in this
+# market", and both are honored distinctly.
+COSTS_TAB = "costs"
+COSTS_COLUMNS = ["year", "month", "market", "total_fee"]
+COSTS_NUMERIC = ["year", "month", "total_fee"]
+COSTS_NULLABLE_NUMERIC = ["seo_fee"]
 
 CONTROL_TAB = "control"
 MAX_CONTROL_AGE_HOURS = 36  # Apps Script ran within the last 1.5 days
@@ -63,10 +97,12 @@ MAX_CONTROL_AGE_HOURS = 36  # Apps Script ran within the last 1.5 days
 # Public API
 # =========================================================================
 def fetch_all(config: dict) -> Dict[str, pd.DataFrame]:
-    """Read all four data tabs from the staging Sheet.
+    """Read the data tabs from the staging Sheet.
 
     Returns a dict shaped exactly like the previous direct-API ingestion path,
     so run_pipeline.py can swap implementations without changing transforms.
+    The `costs` tab is optional; when it is absent the frame comes back empty
+    and join_costs falls back to the config formula.
     """
     sheet_id = _require_sheet_id()
     client = _client()
@@ -76,7 +112,12 @@ def fetch_all(config: dict) -> Dict[str, pd.DataFrame]:
         "ga4_cpi":             _read_tab(sheet, "ga4_cpi",             GA4_COLUMNS,  GA4_NUMERIC),
         "ga4_wellspring":      _read_tab(sheet, "ga4_wellspring",      GA4_COLUMNS,  GA4_NUMERIC),
         "google_ads":          _read_tab(sheet, "google_ads",          ADS_COLUMNS,  ADS_NUMERIC),
-        "performance_summary": _read_tab(sheet, "performance_summary", PERF_COLUMNS, PERF_NUMERIC),
+        "performance_summary": _read_tab(sheet, "performance_summary", PERF_COLUMNS, PERF_NUMERIC,
+                                         optional_numeric=PERF_OPTIONAL_NUMERIC,
+                                         drop_blank_on=PERF_REQUIRED_VALUE),
+        "costs":               _read_tab(sheet, COSTS_TAB, COSTS_COLUMNS, COSTS_NUMERIC,
+                                         nullable_numeric=COSTS_NULLABLE_NUMERIC,
+                                         required=False),
     }
 
     # Apply the Wellspring market override here so transforms see the same
@@ -165,10 +206,16 @@ class ControlTabStale(RuntimeError):
 # =========================================================================
 # Internals
 # =========================================================================
-def _read_tab(sheet, tab_name: str, expected_columns, numeric_columns) -> pd.DataFrame:
+def _read_tab(sheet, tab_name: str, expected_columns, numeric_columns,
+              optional_numeric=None, nullable_numeric=None,
+              drop_blank_on: Optional[str] = None,
+              required: bool = True) -> pd.DataFrame:
     try:
         ws = sheet.worksheet(tab_name)
     except Exception as e:
+        if not required:
+            log.info(f"Staging tab '{tab_name}' absent — continuing without it.")
+            return pd.DataFrame(columns=expected_columns)
         raise RuntimeError(f"Staging Sheet missing tab '{tab_name}': {e}")
 
     records = ws.get_all_records()
@@ -182,8 +229,34 @@ def _read_tab(sheet, tab_name: str, expected_columns, numeric_columns) -> pd.Dat
     if missing:
         raise RuntimeError(f"Staging tab '{tab_name}' missing columns: {missing}")
 
+    # Drop placeholder rows BEFORE coercion, while a blank is still
+    # distinguishable from a real zero.
+    if drop_blank_on and drop_blank_on in df.columns:
+        blank = df[drop_blank_on].isna() | (
+            df[drop_blank_on].astype(str).str.strip().isin(["", "None", "nan"])
+        )
+        if blank.any():
+            dropped = df.loc[blank, ["year", "month"]].drop_duplicates() \
+                if {"year", "month"} <= set(df.columns) else None
+            log.warning(
+                f"Staging tab '{tab_name}': dropped {int(blank.sum())} placeholder "
+                f"row(s) with a blank '{drop_blank_on}'"
+                + (f" — periods {dropped.to_dict('records')}" if dropped is not None else "")
+            )
+            df = df.loc[~blank].copy()
+        if df.empty:
+            return pd.DataFrame(columns=expected_columns)
+
     for col in numeric_columns:
         df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
+    for col in (optional_numeric or []):
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
+    # Nullable: coerced but NOT filled. A blank has to stay distinguishable
+    # from a real 0 for the caller to branch on it.
+    for col in (nullable_numeric or []):
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce")
 
     if "market" in df.columns:
         df["market"] = df["market"].astype(str).str.strip().str.lower()

@@ -50,7 +50,8 @@ except ImportError:
 # Module imports (stubs in this skeleton — see TODOs in each file)
 from ingest import staging_sheet
 from ingest import ga4, google_ads, csv_loader  # legacy/local-only path
-from transform import normalize_markets, classify_branded, aggregate, join_costs, attribute_np
+from transform import (normalize_markets, classify_branded, aggregate, join_costs,
+                       attribute_np, exclude_campaigns)
 from checks import ingestion_checks, transform_checks, output_checks, quality_report
 from render import renderer
 from publish import deploy, notify
@@ -117,18 +118,30 @@ def run(dry_run: bool = False, dummy_data: bool = False, legacy_direct: bool = F
     # -------------------------------------------------------------------------
     log.info("Stage 2: transform")
 
+    # Drop other agencies' campaigns before the market classifier can file them
+    # under one of our markets. Uses the filtered frame as the no_rows_dropped
+    # baseline so a deliberate exclusion doesn't read as an accidental drop.
+    excluded = exclude_campaigns.excluded_summary(raw, config)
+    raw = exclude_campaigns.run(raw, config)
+
     normalized = normalize_markets.run(raw, config)
     quality.record_transform("normalize_markets",
                              transform_checks.no_rows_dropped(raw, normalized, tolerance=0.02))
 
     classified = classify_branded.run(normalized, config)
     aggregated = aggregate.run(classified, config)
-    joined = join_costs.run(aggregated, config)
+    joined = join_costs.run(aggregated, config, costs=classified.get("costs"))
     quality.record_transform("join_costs",
                              transform_checks.no_row_multiplication(aggregated, joined))
 
     perf_summary = classified.get("performance_summary")
     attributed = attribute_np.run(joined, config, performance_summary=perf_summary)
+    quality.record_transform(
+        "join_costs_coverage",
+        transform_checks.costs_cover_spend(
+            joined, reporting_month=attribute_np._reporting_month(attributed)
+            if attributed is not None and not attributed.empty else None),
+    )
     quality.record_transform("attribute_np",
                              transform_checks.shares_sum_to_one(attributed, tolerance=0.01))
 
@@ -157,7 +170,8 @@ def run(dry_run: bool = False, dummy_data: bool = False, legacy_direct: bool = F
     # 4. RENDER
     # -------------------------------------------------------------------------
     log.info("Stage 4: render")
-    output_dir = renderer.render_all(kpis, attributed, config, quality, raw=raw)
+    output_dir = renderer.render_all(kpis, attributed, config, quality, raw=raw,
+                                 excluded=excluded)
     log.info(f"  rendered to: {output_dir}")
 
     # -------------------------------------------------------------------------

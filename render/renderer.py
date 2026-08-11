@@ -81,7 +81,7 @@ def _month_label(ym: str) -> str:
 # Public entry
 # =============================================================================
 def render_all(kpis: dict, attributed: pd.DataFrame, config: dict, quality,
-               raw: dict | None = None) -> Path:
+               raw: dict | None = None, excluded: dict | None = None) -> Path:
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     for child in OUTPUT_DIR.iterdir():          # clear contents, keep the dir (may be a mount)
         if child.is_dir():
@@ -145,7 +145,7 @@ def render_all(kpis: dict, attributed: pd.DataFrame, config: dict, quality,
                 "cards": _topline_cards(metrics, config),
                 "secondary": _secondary_cards(metrics, config),
                 "composition": _composition(kpis, mid),
-                "funnel_steps": _funnel(attributed, reporting_month, market=mid),
+                "funnel_steps": _funnel(attributed, reporting_month, market=mid, stages=metrics),
                 "channel_rows": _channel_rows_for_market(kpis, channels, mid, "../"),
                 "channel_total": _total_row("Total", metrics, ["nps", "cpnp", "roi", "spend"]),
                 "charts": _market_charts(attributed, kpis, mid, channels, reporting_month),
@@ -213,7 +213,7 @@ def render_all(kpis: dict, attributed: pd.DataFrame, config: dict, quality,
     # ---- static + methodology ----
     shutil.copytree(STATIC_DIR, OUTPUT_DIR / "static", dirs_exist_ok=True)
     (OUTPUT_DIR / ".nojekyll").touch()
-    _write_quality_json(quality, kpis)
+    _write_quality_json(quality, kpis, excluded)
 
     n = sum(1 for _ in OUTPUT_DIR.rglob("*.html"))
     log.info(f"render: wrote {n} HTML pages to {OUTPUT_DIR}")
@@ -403,7 +403,21 @@ def _market_sub(mk):
 # =============================================================================
 # Funnel
 # =============================================================================
-def _funnel(attributed, month, market=None, channel=None):
+def _funnel(attributed, month, market=None, channel=None, stages=None):
+    """Funnel for one month.
+
+    `stages` optionally carries the client's intake stages (total_referred,
+    total_scheduled) for this scope. Those are monthly market-level counts with
+    no channel dimension, so they're passed in from the KPI block rather than
+    summed out of `attributed`, and are omitted from a channel-scoped funnel —
+    stacking market-wide intake counts under channel traffic would describe a
+    flow that doesn't exist, the same trap the Spend/Clicks head avoids below.
+
+    total_scheduled counts appointments booked to OCCUR in the month, so it only
+    lines up with the other stages once the month is closed. Callers pass the
+    reporting month, which _reporting_month already limits to a month with 4+
+    complete weeks.
+    """
     df = attributed[attributed["month"] == month]
     if market:
         df = df[df["market"] == market]
@@ -413,7 +427,6 @@ def _funnel(attributed, month, market=None, channel=None):
     leads = float(df["leads"].sum())
     nps = float(df["online_nps_attributed"].sum())
     lrate = leads / sessions if sessions else 0
-    l2np = nps / leads if leads else 0
 
     steps = []
     # Paid-media head (Spend, Clicks) only when the funnel scope IS paid media.
@@ -434,8 +447,24 @@ def _funnel(attributed, month, market=None, channel=None):
     steps.append({"label": "Sessions", "value": _int(sessions), "note": session_note})
     steps.append({"label": "Leads", "value": _int(leads),
                   "note": f"{lrate*100:.1f}% lead rate" if sessions else "—"})
+
+    # Client intake stages, market scope only. `prev` tracks the last stage
+    # actually rendered so each note is a step-over-step rate rather than a rate
+    # against a stage that may have been skipped.
+    prev, prev_label = leads, "lead"
+    if channel is None and stages:
+        for key, label in (("total_referred", "Referred"), ("total_scheduled", "Scheduled")):
+            value = stages.get(key)
+            if value is None:
+                continue
+            value = float(value)
+            note = f"{value / prev * 100:.0f}% {prev_label}→{label.lower()}" if prev else "—"
+            steps.append({"label": label, "value": _int(value), "note": note})
+            prev, prev_label = value, label.lower()
+
+    final_note = f"{nps / prev * 100:.0f}% {prev_label}→NP" if prev else "—"
     steps.append({"label": "New Patients", "value": _int(round(nps)),
-                  "note": f"{l2np*100:.0f}% lead→NP" if leads else "—"})
+                  "note": final_note if leads else "—"})
     return steps
 
 
@@ -651,7 +680,7 @@ def _exceptions_view(kpis, config):
     return {"groups": groups, "total": exc.get("total", 0)}
 
 
-def _write_quality_json(quality, kpis):
+def _write_quality_json(quality, kpis, excluded=None):
     meth = OUTPUT_DIR / "methodology"
     meth.mkdir(parents=True, exist_ok=True)
     try:
@@ -659,6 +688,10 @@ def _write_quality_json(quality, kpis):
     except Exception:
         report = {}
     payload = {"reporting_period": kpis["meta"]["reporting_period"], "quality": report}
+    # Disclose excluded campaigns (R55, the Ohio pilot agency) so the gap
+    # between the dashboard and the raw ad account is documented, not silent.
+    if excluded:
+        payload["excluded_campaigns"] = excluded
     (meth / "quality.json").write_text(json.dumps(payload, default=str, indent=2))
 
 
