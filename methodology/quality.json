@@ -1,0 +1,18 @@
+{
+  "reporting_period": "2026-07",
+  "quality": {},
+  "excluded_campaigns": {
+    "google_ads": {
+      "patterns": [
+        "R55"
+      ],
+      "rows": 58,
+      "campaigns": [
+        "R55 Branded | OH",
+        "R55 Treatments | OH"
+      ],
+      "spend": 1458.75,
+      "conversions": 39.99
+    }
+  }
+}

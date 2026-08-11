@@ -1,0 +1,451 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CPI Health — Campaigns</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="static/cpi-brand.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <div class="header">
+    <div class="header-logo">
+      <div class="logo-text">CPI<span class="accent">health</span></div>
+    </div>
+    <div class="header-info">
+      <div class="header-title">Performance Dashboard</div>
+      <div class="header-meta">
+        <span>July 2026</span>
+        <span>·</span>
+        <span>Refreshed Tue Aug 11, 2026</span>
+        <span>·</span>
+        <span><span class="quality-dot warn"></span>Quality flag</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="topnav">
+    <div class="container">
+      <a href="index.html" class="">Overview</a>
+      <a href="exceptions.html" class="">Exceptions</a>
+      <a href="campaigns.html" class="active">Campaigns</a>
+    </div>
+  </div>
+
+  <div class="container main">
+
+    
+
+    
+    <h1 class="page-title">Campaigns</h1>
+    <div class="page-subtitle">Media performance · July 2026</div>
+    
+
+    
+    <div class="quality-banner warn">Rendered with a quality warning — some movements exceeded soft bands.</div>
+    
+
+    
+
+  <div class="quality-banner warn" style="background:var(--light-blue);border-color:var(--mid-blue);color:var(--cpi-blue)">
+    New-patient and CPNP columns are shown as <strong>pending attribution</strong>. Campaign media metrics (spend, clicks, CPC, leads) are live; tying a new patient to the campaign that drove it needs lead-to-patient tracking (gclid/UTM capture at form and call). See methodology.
+  </div>
+
+  <div class="section-label">Campaign Media Performance</div>
+  
+  <div class="panel no-pad">
+    <table class="data-table">
+      <thead>
+        <tr><th>Campaign</th><th>Spend</th><th>Clicks</th><th>CPC</th><th>Leads</th><th>NPs</th><th>CPNP</th></tr>
+      </thead>
+      <tbody>
+        
+        <tr>
+          <td><span class="market-name">TX - Austin South | tCPA 75 (restarted) | AI max</span><span class="brand-tag">Texas · Non-Brand</span></td>
+          <td>$8,136</td>
+          <td>853</td>
+          <td>$9.54</td>
+          <td>108</td>
+          <td><span class="pending-inline">pending</span></td>
+          <td><span class="pending-inline">pending</span></td>
+        </tr>
+        
+        <tr>
+          <td><span class="market-name">CO - Colorado Springs Pmax | 17.02 | tCPA 40</span><span class="brand-tag">Colorado · Non-Brand</span></td>
+          <td>$6,771</td>
+          <td>1,141</td>
+          <td>$5.93</td>
+          <td>154</td>
+          <td><span class="pending-inline">pending</span></td>
+          <td><span class="pending-inline">pending</span></td>
+        </tr>
+        
+        <tr>
+          <td><span class="market-name">TX - Austin North Pmax | 01.03 | tCPA 56</span><span class="brand-tag">Texas · Non-Brand</span></td>
+          <td>$5,913</td>
+          <td>903</td>
+          <td>$6.55</td>
+          <td>111</td>
+          <td><span class="pending-inline">pending</span></td>
+          <td><span class="pending-inline">pending</span></td>
+        </tr>
+        
+        <tr>
+          <td><span class="market-name">CO - Denver (GW Village) | tCPA 40 | AI max</span><span class="brand-tag">Colorado · Non-Brand</span></td>
+          <td>$4,367</td>
+          <td>732</td>
+          <td>$5.97</td>
+          <td>99</td>
+          <td><span class="pending-inline">pending</span></td>
+          <td><span class="pending-inline">pending</span></td>
+        </tr>
+        
+        <tr>
+          <td><span class="market-name">KY - Louisville (South) | tCPA 30 | AI Max</span><span class="brand-tag">Kentucky · Non-Brand</span></td>
+          <td>$4,228</td>
+          <td>749</td>
+          <td>$5.65</td>
+          <td>133</td>
+          <td><span class="pending-inline">pending</span></td>
+          <td><span class="pending-inline">pending</span></td>
+        </tr>
+        
+        <tr>
+          <td><span class="market-name">TX - Killeen Pmax | 18.02 | tCPA 57</span><span class="brand-tag">Texas · Non-Brand</span></td>
+          <td>$4,129</td>
+          <td>660</td>
+          <td>$6.26</td>
+          <td>73</td>
+          <td><span class="pending-inline">pending</span></td>
+          <td><span class="pending-inline">pending</span></td>
+        </tr>
+        
+        <tr>
+          <td><span class="market-name">Wellspring - Bloomington Pmax | 22.01 | tCPA 43</span><span class="brand-tag">Indiana · Non-Brand</span></td>
+          <td>$3,378</td>
+          <td>561</td>
+          <td>$6.02</td>
+          <td>69</td>
+          <td><span class="pending-inline">pending</span></td>
+          <td><span class="pending-inline">pending</span></td>
+        </tr>
+        
+        <tr>
+          <td><span class="market-name">Wellspring - Greenwood Pmax | 22.01 | tCPA 35</span><span class="brand-tag">Indiana · Non-Brand</span></td>
+          <td>$3,242</td>
+          <td>720</td>
+          <td>$4.50</td>
+          <td>81</td>
+          <td><span class="pending-inline">pending</span></td>
+          <td><span class="pending-inline">pending</span></td>
+        </tr>
+        
+        <tr>
+          <td><span class="market-name">TX - Austin North | tCPA 48 | AI max</span><span class="brand-tag">Texas · Non-Brand</span></td>
+          <td>$3,137</td>
+          <td>452</td>
+          <td>$6.94</td>
+          <td>63</td>
+          <td><span class="pending-inline">pending</span></td>
+          <td><span class="pending-inline">pending</span></td>
+        </tr>
+        
+        <tr>
+          <td><span class="market-name">Wellspring - Greenwood | tCPA 60 (restarted)</span><span class="brand-tag">Indiana · Non-Brand</span></td>
+          <td>$3,126</td>
+          <td>389</td>
+          <td>$8.04</td>
+          <td>54</td>
+          <td><span class="pending-inline">pending</span></td>
+          <td><span class="pending-inline">pending</span></td>
+        </tr>
+        
+        <tr>
+          <td><span class="market-name">TX - Killeen | tCPA 60 | AI max</span><span class="brand-tag">Texas · Non-Brand</span></td>
+          <td>$3,126</td>
+          <td>310</td>
+          <td>$10.08</td>
+          <td>49</td>
+          <td><span class="pending-inline">pending</span></td>
+          <td><span class="pending-inline">pending</span></td>
+        </tr>
+        
+        <tr>
+          <td><span class="market-name">CO - Colorado Springs | tCPA 40 | AI max</span><span class="brand-tag">Colorado · Non-Brand</span></td>
+          <td>$3,048</td>
+          <td>307</td>
+          <td>$9.93</td>
+          <td>57</td>
+          <td><span class="pending-inline">pending</span></td>
+          <td><span class="pending-inline">pending</span></td>
+        </tr>
+        
+        <tr>
+          <td><span class="market-name">KY - Louisville (South) Pmax | 01.02 | tCPA 37</span><span class="brand-tag">Kentucky · Non-Brand</span></td>
+          <td>$2,991</td>
+          <td>616</td>
+          <td>$4.86</td>
+          <td>79</td>
+          <td><span class="pending-inline">pending</span></td>
+          <td><span class="pending-inline">pending</span></td>
+        </tr>
+        
+        <tr>
+          <td><span class="market-name">KY - Elizabethtown | tCPA 29 | AI Max</span><span class="brand-tag">Kentucky · Non-Brand</span></td>
+          <td>$2,624</td>
+          <td>454</td>
+          <td>$5.78</td>
+          <td>80</td>
+          <td><span class="pending-inline">pending</span></td>
+          <td><span class="pending-inline">pending</span></td>
+        </tr>
+        
+        <tr>
+          <td><span class="market-name">CO - Denver (GW Village) Pmax | 03.03 | Max Conv</span><span class="brand-tag">Colorado · Non-Brand</span></td>
+          <td>$2,378</td>
+          <td>456</td>
+          <td>$5.21</td>
+          <td>46</td>
+          <td><span class="pending-inline">pending</span></td>
+          <td><span class="pending-inline">pending</span></td>
+        </tr>
+        
+        <tr>
+          <td><span class="market-name">Wellspring - Columbus Pmax | 22.01 | tCPA 50</span><span class="brand-tag">Indiana · Non-Brand</span></td>
+          <td>$2,369</td>
+          <td>379</td>
+          <td>$6.25</td>
+          <td>51</td>
+          <td><span class="pending-inline">pending</span></td>
+          <td><span class="pending-inline">pending</span></td>
+        </tr>
+        
+        <tr>
+          <td><span class="market-name">TX - Austin South Pmax | 18.02 | tCPA 40</span><span class="brand-tag">Texas · Non-Brand</span></td>
+          <td>$2,084</td>
+          <td>421</td>
+          <td>$4.95</td>
+          <td>47</td>
+          <td><span class="pending-inline">pending</span></td>
+          <td><span class="pending-inline">pending</span></td>
+        </tr>
+        
+        <tr>
+          <td><span class="market-name">KY - Elizabethtown Pmax | 01.02 | Max Conv</span><span class="brand-tag">Kentucky · Non-Brand</span></td>
+          <td>$1,940</td>
+          <td>361</td>
+          <td>$5.37</td>
+          <td>33</td>
+          <td><span class="pending-inline">pending</span></td>
+          <td><span class="pending-inline">pending</span></td>
+        </tr>
+        
+        <tr>
+          <td><span class="market-name">KY - Louisville (East) Pmax | 01.02 | Max Conv</span><span class="brand-tag">Kentucky · Non-Brand</span></td>
+          <td>$1,744</td>
+          <td>342</td>
+          <td>$5.10</td>
+          <td>41</td>
+          <td><span class="pending-inline">pending</span></td>
+          <td><span class="pending-inline">pending</span></td>
+        </tr>
+        
+        <tr>
+          <td><span class="market-name">OH - Pickerington Pmax | tCPA 30</span><span class="brand-tag">Ohio · Non-Brand</span></td>
+          <td>$1,570</td>
+          <td>360</td>
+          <td>$4.36</td>
+          <td>73</td>
+          <td><span class="pending-inline">pending</span></td>
+          <td><span class="pending-inline">pending</span></td>
+        </tr>
+        
+        <tr>
+          <td><span class="market-name">OH - New Albany Pmax | tCPA 48</span><span class="brand-tag">Ohio · Non-Brand</span></td>
+          <td>$1,396</td>
+          <td>290</td>
+          <td>$4.81</td>
+          <td>72</td>
+          <td><span class="pending-inline">pending</span></td>
+          <td><span class="pending-inline">pending</span></td>
+        </tr>
+        
+        <tr>
+          <td><span class="market-name">TX - Bastrop Pmax | 01.03 | Max Conv</span><span class="brand-tag">Texas · Non-Brand</span></td>
+          <td>$1,198</td>
+          <td>194</td>
+          <td>$6.17</td>
+          <td>14</td>
+          <td><span class="pending-inline">pending</span></td>
+          <td><span class="pending-inline">pending</span></td>
+        </tr>
+        
+        <tr>
+          <td><span class="market-name">TX - Bastrop | tCPA 48 | AI max</span><span class="brand-tag">Texas · Non-Brand</span></td>
+          <td>$1,165</td>
+          <td>193</td>
+          <td>$6.04</td>
+          <td>23</td>
+          <td><span class="pending-inline">pending</span></td>
+          <td><span class="pending-inline">pending</span></td>
+        </tr>
+        
+        <tr>
+          <td><span class="market-name">TX - Austin South - Pain Treatments | tCPA 70</span><span class="brand-tag">Texas · Non-Brand</span></td>
+          <td>$1,150</td>
+          <td>111</td>
+          <td>$10.36</td>
+          <td>13</td>
+          <td><span class="pending-inline">pending</span></td>
+          <td><span class="pending-inline">pending</span></td>
+        </tr>
+        
+        <tr>
+          <td><span class="market-name">TX - Georgetown | tCPA 55 (restarted) | AI max</span><span class="brand-tag">Texas · Non-Brand</span></td>
+          <td>$1,136</td>
+          <td>174</td>
+          <td>$6.53</td>
+          <td>18</td>
+          <td><span class="pending-inline">pending</span></td>
+          <td><span class="pending-inline">pending</span></td>
+        </tr>
+        
+        <tr>
+          <td><span class="market-name">Wellspring - Columbus | tCPA 60 (restarted2) | AI max</span><span class="brand-tag">Indiana · Non-Brand</span></td>
+          <td>$1,073</td>
+          <td>129</td>
+          <td>$8.32</td>
+          <td>18</td>
+          <td><span class="pending-inline">pending</span></td>
+          <td><span class="pending-inline">pending</span></td>
+        </tr>
+        
+        <tr>
+          <td><span class="market-name">MISS - Munster &amp; Chesterton | Max Conv</span><span class="brand-tag">Indiana · Non-Brand</span></td>
+          <td>$967</td>
+          <td>342</td>
+          <td>$2.83</td>
+          <td>17</td>
+          <td><span class="pending-inline">pending</span></td>
+          <td><span class="pending-inline">pending</span></td>
+        </tr>
+        
+        <tr>
+          <td><span class="market-name">KY - Louisville (East) | tCPA 22 | AI Max</span><span class="brand-tag">Kentucky · Non-Brand</span></td>
+          <td>$816</td>
+          <td>228</td>
+          <td>$3.58</td>
+          <td>32</td>
+          <td><span class="pending-inline">pending</span></td>
+          <td><span class="pending-inline">pending</span></td>
+        </tr>
+        
+        <tr>
+          <td><span class="market-name">TX - Austin DSA | 30.03 | tCPA 70</span><span class="brand-tag">Texas · Non-Brand</span></td>
+          <td>$790</td>
+          <td>205</td>
+          <td>$3.86</td>
+          <td>8</td>
+          <td><span class="pending-inline">pending</span></td>
+          <td><span class="pending-inline">pending</span></td>
+        </tr>
+        
+        <tr>
+          <td><span class="market-name">TX - Georgetown Pmax | 01.03 | tCPA 50</span><span class="brand-tag">Texas · Non-Brand</span></td>
+          <td>$623</td>
+          <td>119</td>
+          <td>$5.24</td>
+          <td>14</td>
+          <td><span class="pending-inline">pending</span></td>
+          <td><span class="pending-inline">pending</span></td>
+        </tr>
+        
+        <tr>
+          <td><span class="market-name">OH - Columbus (East) Pickerington | tCPA 25</span><span class="brand-tag">Ohio · Non-Brand</span></td>
+          <td>$587</td>
+          <td>133</td>
+          <td>$4.42</td>
+          <td>24</td>
+          <td><span class="pending-inline">pending</span></td>
+          <td><span class="pending-inline">pending</span></td>
+        </tr>
+        
+        <tr>
+          <td><span class="market-name">Wellspring - Bloomington | tCPA 32 | AI max</span><span class="brand-tag">Indiana · Non-Brand</span></td>
+          <td>$460</td>
+          <td>79</td>
+          <td>$5.83</td>
+          <td>10</td>
+          <td><span class="pending-inline">pending</span></td>
+          <td><span class="pending-inline">pending</span></td>
+        </tr>
+        
+        <tr>
+          <td><span class="market-name">TX - Austin Bee Cave Pmax | 01.03 | tCPA 40</span><span class="brand-tag">Texas · Non-Brand</span></td>
+          <td>$404</td>
+          <td>111</td>
+          <td>$3.64</td>
+          <td>12</td>
+          <td><span class="pending-inline">pending</span></td>
+          <td><span class="pending-inline">pending</span></td>
+        </tr>
+        
+        <tr>
+          <td><span class="market-name">OH - Columbus (North) New Albany | tCPA 23</span><span class="brand-tag">Ohio · Non-Brand</span></td>
+          <td>$387</td>
+          <td>76</td>
+          <td>$5.10</td>
+          <td>12</td>
+          <td><span class="pending-inline">pending</span></td>
+          <td><span class="pending-inline">pending</span></td>
+        </tr>
+        
+        <tr>
+          <td><span class="market-name">TX - Austin Bee Cave | tCPA 60 (restarted)</span><span class="brand-tag">Texas · Non-Brand</span></td>
+          <td>$382</td>
+          <td>46</td>
+          <td>$8.31</td>
+          <td>6</td>
+          <td><span class="pending-inline">pending</span></td>
+          <td><span class="pending-inline">pending</span></td>
+        </tr>
+        
+      </tbody>
+    </table>
+  </div>
+  
+
+
+
+    <div class="footer">
+      <div class="footer-meth">
+        <h4>Assumptions</h4>
+        <p>Revenue per new patient: $3,500. ROI = (NPs × revenue − all-in cost) / all-in cost. All-in cost = media spend + agency fees. Partner costs excluded.</p>
+        <h4>Attribution</h4>
+        <p>Channel attribution for new patients is modeled proportionally from online lead share. Direct intake source data is not yet captured at the patient level — improving this is a near-term priority.</p>
+        <h4>Self-Referral Categories</h4>
+        <p>Source categories are based on patient self-report at intake and may understate or miscategorize true source. Categories are harmonized across markets where intake systems differ.</p>
+        <h4>Quality Status</h4>
+        <p>Passed with warnings. Some period-over-period movements exceeded soft bands; see run log.</p>
+      </div>
+      <div class="footer-credit">
+        <div class="agency">Fillungo</div>
+        <div class="meta">
+          Generated Tue Aug 11, 2026 · 9:33PM CT<br />
+          Sources: GA4, Google Ads, performance_summary
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>window.__CHARTS__ = {};</script>
+  <script src="static/charts.js"></script>
+
+</body>
+</html>

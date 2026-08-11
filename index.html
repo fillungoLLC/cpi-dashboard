@@ -1,0 +1,288 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CPI Health — All Markets</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="static/cpi-brand.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <div class="header">
+    <div class="header-logo">
+      <div class="logo-text">CPI<span class="accent">health</span></div>
+    </div>
+    <div class="header-info">
+      <div class="header-title">Performance Dashboard</div>
+      <div class="header-meta">
+        <span>July 2026</span>
+        <span>·</span>
+        <span>Refreshed Tue Aug 11, 2026</span>
+        <span>·</span>
+        <span><span class="quality-dot warn"></span>Quality flag</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="topnav">
+    <div class="container">
+      <a href="index.html" class="active">Overview</a>
+      <a href="exceptions.html" class="">Exceptions</a>
+      <a href="campaigns.html" class="">Campaigns</a>
+    </div>
+  </div>
+
+  <div class="container main">
+
+    
+
+    
+
+    
+    <div class="quality-banner warn">Rendered with a quality warning — some movements exceeded soft bands.</div>
+    
+
+    
+
+  
+<div class="kpi-strip">
+  
+  <div class="kpi-card hero">
+    <div class="kpi-label">ROI</div>
+    <div class="kpi-value">351%</div>
+    <div class="kpi-foot">(revenue − cost) / cost <span class="info-badge" title="ROI = (NPs × revenue − all-in cost) / all-in cost">i</span></div>
+  </div>
+  
+  <div class="kpi-card">
+    <div class="kpi-label">Online NPs</div>
+    <div class="kpi-value">123</div>
+    <div class="kpi-foot">this period</div>
+  </div>
+  
+  <div class="kpi-card">
+    <div class="kpi-label">Online % of Self-Refs</div>
+    <div class="kpi-value pending-inline">—</div>
+    <div class="kpi-foot">pending intake data</div>
+  </div>
+  
+  <div class="kpi-card">
+    <div class="kpi-label">Self-Refs % of Total</div>
+    <div class="kpi-value pending-inline">—</div>
+    <div class="kpi-foot">pending intake data</div>
+  </div>
+  
+  <div class="kpi-card">
+    <div class="kpi-label">Cost per Online NP</div>
+    <div class="kpi-value">$777</div>
+    <div class="kpi-foot">media + agency fees <span class="info-badge" title="All-in cost = media spend + agency fees">i</span></div>
+  </div>
+  
+</div>
+
+  
+<div class="secondary-strip">
+  
+  <div class="secondary-card">
+    <span class="label">Marketing Profitability</span>
+    <span><span class="value">$334,946</span></span>
+  </div>
+  
+  <div class="secondary-card">
+    <span class="label">Total Leads</span>
+    <span><span class="value">3,999</span></span>
+  </div>
+  
+  <div class="secondary-card">
+    <span class="label">Blended CPL</span>
+    <span><span class="value">$19.17</span><span class="compare">vs $66.02 healthcare avg</span></span>
+  </div>
+  
+</div>
+
+
+  <div class="section-label">Self-Referral Composition</div>
+  
+<div class="panel">
+  <div class="grid-2-split">
+    <div>
+      <div class="panel-title">Source Breakdown</div>
+      <div class="panel-sub">July 2026</div>
+      
+        <div class="pending-panel" style="margin-top:8px">
+          <div class="pending-title">Awaiting intake source data</div>
+          <div class="pending-note">Self-referral composition comes from the monthly practice intake summary (patient self-reported source). It populates once that feed is connected; online performance below is unaffected.</div>
+        </div>
+      
+    </div>
+    <div>
+      <div class="panel-title">Share Trend</div>
+      <div class="panel-sub">% of self-referrals by source</div>
+      
+        <div class="pending-panel" style="margin-top:8px;height:240px;display:flex;flex-direction:column;justify-content:center">
+          <div class="pending-note">Trend appears with two or more months of intake data.</div>
+        </div>
+      
+    </div>
+  </div>
+</div>
+
+
+  <div class="section-label">Market Performance</div>
+  
+<div class="panel no-pad">
+  <table class="data-table">
+    <thead>
+      <tr><th>Market</th><th>NPs</th><th>CPNP</th><th>ROI</th><th>Profitability</th><th></th></tr>
+    </thead>
+    <tbody>
+      
+      <tr class="clickable" onclick="window.location='markets/indiana.html'">
+        <td><span class="market-name">Indiana</span><span class="brand-tag">Wellspring</span></td>
+        <td>29</td><td>$617</td><td>467%</td><td>$83,603</td>
+        <td><span class="row-arrow">→</span></td>
+      </tr>
+      
+      <tr class="clickable" onclick="window.location='markets/kentucky.html'">
+        <td><span class="market-name">Kentucky</span></td>
+        <td>41</td><td>$385</td><td>810%</td><td>$127,727</td>
+        <td><span class="row-arrow">→</span></td>
+      </tr>
+      
+      <tr class="clickable" onclick="window.location='markets/ohio.html'">
+        <td><span class="market-name">Ohio</span></td>
+        <td>13</td><td>$431</td><td>712%</td><td>$39,895</td>
+        <td><span class="row-arrow">→</span></td>
+      </tr>
+      
+      <tr class="clickable" onclick="window.location='markets/colorado.html'">
+        <td><span class="market-name">Colorado</span></td>
+        <td>10</td><td>$1,740</td><td>101%</td><td>$17,600</td>
+        <td><span class="row-arrow">→</span></td>
+      </tr>
+      
+      <tr class="clickable" onclick="window.location='markets/texas.html'">
+        <td><span class="market-name">Texas</span></td>
+        <td>30</td><td>$1,296</td><td>170%</td><td>$66,120</td>
+        <td><span class="row-arrow">→</span></td>
+      </tr>
+      
+      <tr class="clickable tbd-row" onclick="window.location='markets/minnesota.html'">
+        <td><span class="market-name" style="color:var(--light-gray)">Minnesota</span><span class="brand-tag">Nuro</span></td>
+        <td>TBD</td><td>TBD</td><td>TBD</td><td>TBD</td>
+        <td><span class="row-arrow">→</span></td>
+      </tr>
+      
+      
+      <tr class="total-row">
+        <td>Total</td><td>123</td><td>$777</td><td>351%</td><td>$334,946</td><td></td>
+      </tr>
+      
+    </tbody>
+  </table>
+</div>
+
+
+  <div class="section-label">Channel Performance</div>
+  
+<div class="panel no-pad">
+  <table class="data-table">
+    <thead>
+      <tr><th>Channel</th><th>NPs</th><th>CPNP</th><th>ROI</th><th>Spend</th><th></th></tr>
+    </thead>
+    <tbody>
+      
+      <tr class="clickable" onclick="window.location='channels/paid_search.html'">
+        <td><span class="market-name">Google Ads</span></td>
+        <td>38</td><td>$2,299</td><td>52%</td><td>$76,654</td>
+        <td><span class="row-arrow">→</span></td>
+      </tr>
+      
+      <tr class="clickable" onclick="window.location='channels/organic.html'">
+        <td><span class="market-name">Organic Search (SEO)</span></td>
+        <td>69</td><td>$109</td><td>3,102%</td><td>$0</td>
+        <td><span class="row-arrow">→</span></td>
+      </tr>
+      
+      <tr class="clickable" onclick="window.location='channels/direct.html'">
+        <td><span class="market-name">Direct / Branded</span></td>
+        <td>16</td><td>$0</td><td>—</td><td>$0</td>
+        <td><span class="row-arrow">→</span></td>
+      </tr>
+      
+      <tr class="clickable" onclick="window.location='channels/other.html'">
+        <td><span class="market-name">Other / Offline</span></td>
+        <td>0</td><td>—</td><td>—</td><td>$0</td>
+        <td><span class="row-arrow">→</span></td>
+      </tr>
+      
+      
+      <tr class="total-row">
+        <td>Total</td><td>123</td><td>$777</td><td>351%</td><td>$76,654</td><td></td>
+      </tr>
+      
+    </tbody>
+  </table>
+</div>
+
+
+  
+
+  
+  <details class="trends">
+    <summary>Trends &amp; Charts</summary>
+    <div class="trends-body">
+    <div class="panel" style="border:none;box-shadow:none;padding:0">
+      <div class="panel-title">New Patients by Market</div>
+      <div class="panel-sub">Monthly · online new patients · all active markets</div>
+      <div class="chart-wrap tall"><canvas id="marketTrend"></canvas></div>
+    </div>
+    <div class="grid-2" style="margin-top:16px">
+      <div class="panel">
+        <div class="panel-title">ROI by Market</div>
+        <div class="panel-sub">July 2026</div>
+        <div class="chart-wrap"><canvas id="roiByMarket"></canvas></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">New Patients by Channel</div>
+        <div class="panel-sub">Monthly · stacked</div>
+        <div class="chart-wrap"><canvas id="npByChannel"></canvas></div>
+      </div>
+    </div>
+  </div>
+  </details>
+  
+
+
+
+    <div class="footer">
+      <div class="footer-meth">
+        <h4>Assumptions</h4>
+        <p>Revenue per new patient: $3,500. ROI = (NPs × revenue − all-in cost) / all-in cost. All-in cost = media spend + agency fees. Partner costs excluded.</p>
+        <h4>Attribution</h4>
+        <p>Channel attribution for new patients is modeled proportionally from online lead share. Direct intake source data is not yet captured at the patient level — improving this is a near-term priority.</p>
+        <h4>Self-Referral Categories</h4>
+        <p>Source categories are based on patient self-report at intake and may understate or miscategorize true source. Categories are harmonized across markets where intake systems differ.</p>
+        <h4>Quality Status</h4>
+        <p>Passed with warnings. Some period-over-period movements exceeded soft bands; see run log.</p>
+      </div>
+      <div class="footer-credit">
+        <div class="agency">Fillungo</div>
+        <div class="meta">
+          Generated Tue Aug 11, 2026 · 9:33PM CT<br />
+          Sources: GA4, Google Ads, performance_summary
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>window.__CHARTS__ = {"marketTrend": {"data": {"datasets": [{"backgroundColor": "#00477E", "borderColor": "#00477E", "borderWidth": 2, "data": [39.0, 40.0, 41.0, 29.0, null], "fill": false, "label": "Indiana", "pointRadius": 2, "tension": 0.3}, {"backgroundColor": "#1a5a8e", "borderColor": "#1a5a8e", "borderWidth": 2, "data": [52.0, 37.0, 50.0, 41.0, null], "fill": false, "label": "Kentucky", "pointRadius": 2, "tension": 0.3}, {"backgroundColor": "#8FA8C0", "borderColor": "#8FA8C0", "borderWidth": 2, "data": [35.0, 21.0, 13.0, 13.0, null], "fill": false, "label": "Ohio", "pointRadius": 2, "tension": 0.3}, {"backgroundColor": "#5a8ab0", "borderColor": "#5a8ab0", "borderWidth": 2, "data": [18.0, 21.0, 26.0, 10.0, null], "fill": false, "label": "Colorado", "pointRadius": 2, "tension": 0.3}, {"backgroundColor": "#C5D8EC", "borderColor": "#C5D8EC", "borderWidth": 2, "data": [46.0, 26.0, 42.0, 30.0, null], "fill": false, "label": "Texas", "pointRadius": 2, "tension": 0.3}], "labels": ["Apr", "May", "Jun", "Jul", "Aug"]}, "opts": {"legend": true}, "type": "line"}, "npByChannel": {"data": {"datasets": [{"backgroundColor": "#00477E", "data": [0.0, 51.4, 63.6, 38.3, 0.0], "label": "Google Ads", "stack": "s"}, {"backgroundColor": "#1a5a8e", "data": [46.0, 82.2, 96.4, 69.2, 0.0], "label": "Organic Search (SEO)", "stack": "s"}, {"backgroundColor": "#8FA8C0", "data": [null, null, null, null, null], "label": "Google Business Profile", "stack": "s"}, {"backgroundColor": "#5a8ab0", "data": [39.0, 11.3, 12.0, 15.6, 0.0], "label": "Direct / Branded", "stack": "s"}, {"backgroundColor": "#C5D8EC", "data": [0.0, 0.0, 0.0, 0.0, 0.0], "label": "Other / Offline", "stack": "s"}], "labels": ["Apr", "May", "Jun", "Jul", "Aug"]}, "opts": {"legend": true, "stacked": true}, "type": "bar"}, "roiByMarket": {"data": {"datasets": [{"backgroundColor": "#00477E", "borderColor": "#00477E", "borderRadius": 2, "data": [467, 810, 712, 101, 170], "label": "ROI"}], "labels": ["Indiana", "Kentucky", "Ohio", "Colorado", "Texas"]}, "opts": {"indexAxis": "y", "legend": false, "tt_pct": true, "y_fmt": "pct"}, "type": "bar"}};</script>
+  <script src="static/charts.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,185 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CPI Health — Texas · Other / Offline</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../static/cpi-brand.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <div class="header">
+    <div class="header-logo">
+      <div class="logo-text">CPI<span class="accent">health</span></div>
+    </div>
+    <div class="header-info">
+      <div class="header-title">Performance Dashboard</div>
+      <div class="header-meta">
+        <span>July 2026</span>
+        <span>·</span>
+        <span>Refreshed Tue Aug 11, 2026</span>
+        <span>·</span>
+        <span><span class="quality-dot warn"></span>Quality flag</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="topnav">
+    <div class="container">
+      <a href="../index.html" class="">Overview</a>
+      <a href="../exceptions.html" class="">Exceptions</a>
+      <a href="../campaigns.html" class="">Campaigns</a>
+    </div>
+  </div>
+
+  <div class="container main">
+
+    
+    <nav class="breadcrumb">
+      
+        <a href="../index.html">Overview</a>
+        <span class="sep">&raquo;</span>
+      
+        <a href="../markets/texas.html">Texas</a>
+        <span class="sep">&raquo;</span>
+      
+        <span class="current">Other / Offline</span>
+        
+      
+    </nav>
+    
+
+    
+    <h1 class="page-title">Texas · Other / Offline</h1>
+    
+    
+
+    
+    <div class="quality-banner warn">Rendered with a quality warning — some movements exceeded soft bands.</div>
+    
+
+    
+
+  
+<div class="kpi-strip with-spend">
+  
+  <div class="kpi-card hero">
+    <div class="kpi-label">ROI</div>
+    <div class="kpi-value">—</div>
+    <div class="kpi-foot">(revenue − cost) / cost <span class="info-badge" title="ROI = (NPs × revenue − all-in cost) / all-in cost">i</span></div>
+  </div>
+  
+  <div class="kpi-card">
+    <div class="kpi-label">Online NPs</div>
+    <div class="kpi-value">0</div>
+    <div class="kpi-foot">this period</div>
+  </div>
+  
+  <div class="kpi-card">
+    <div class="kpi-label">Cost per Online NP</div>
+    <div class="kpi-value">—</div>
+    <div class="kpi-foot">media + agency fees</div>
+  </div>
+  
+  <div class="kpi-card">
+    <div class="kpi-label">Marketing Profit</div>
+    <div class="kpi-value">$0</div>
+    <div class="kpi-foot">revenue − cost</div>
+  </div>
+  
+  <div class="kpi-card">
+    <div class="kpi-label">Total Leads</div>
+    <div class="kpi-value">0</div>
+    <div class="kpi-foot">this period</div>
+  </div>
+  
+  <div class="kpi-card">
+    <div class="kpi-label">Spend</div>
+    <div class="kpi-value">$0</div>
+    <div class="kpi-foot">media only</div>
+  </div>
+  
+</div>
+
+
+  <div class="section-label">Acquisition Funnel · Texas · Other / Offline</div>
+  <div class="panel">
+    <div class="panel-title">Sessions → Leads → New Patients</div>
+    <div class="panel-sub">July 2026</div>
+    
+<div class="funnel-wrap">
+  
+  <div class="funnel-step">
+    <div class="label">Sessions</div>
+    <div class="value">7</div>
+    <div class="drop">channel traffic</div>
+    <span class="funnel-arrow">›</span>
+  </div>
+  
+  <div class="funnel-step">
+    <div class="label">Leads</div>
+    <div class="value">0</div>
+    <div class="drop">0.0% lead rate</div>
+    <span class="funnel-arrow">›</span>
+  </div>
+  
+  <div class="funnel-step terminal">
+    <div class="label">New Patients</div>
+    <div class="value">0</div>
+    <div class="drop">—</div>
+    
+  </div>
+  
+</div>
+
+  </div>
+
+  
+
+  
+  <details class="trends">
+    <summary>Trends &amp; Charts</summary>
+    <div class="trends-body">
+    <div class="panel" style="border:none;box-shadow:none;padding:0">
+      <div class="panel-title">Weekly Performance · Texas · Other / Offline</div>
+      <div class="panel-sub">Leads and spend by week</div>
+      <div class="chart-wrap tall"><canvas id="weeklyPerformance"></canvas></div>
+    </div>
+  </div>
+  </details>
+  
+
+
+
+    <div class="footer">
+      <div class="footer-meth">
+        <h4>Assumptions</h4>
+        <p>Revenue per new patient: $3,500. ROI = (NPs × revenue − all-in cost) / all-in cost. All-in cost = media spend + agency fees. Partner costs excluded.</p>
+        <h4>Attribution</h4>
+        <p>Channel attribution for new patients is modeled proportionally from online lead share. Direct intake source data is not yet captured at the patient level — improving this is a near-term priority.</p>
+        <h4>Self-Referral Categories</h4>
+        <p>Source categories are based on patient self-report at intake and may understate or miscategorize true source. Categories are harmonized across markets where intake systems differ.</p>
+        <h4>Quality Status</h4>
+        <p>Passed with warnings. Some period-over-period movements exceeded soft bands; see run log.</p>
+      </div>
+      <div class="footer-credit">
+        <div class="agency">Fillungo</div>
+        <div class="meta">
+          Generated Tue Aug 11, 2026 · 9:33PM CT<br />
+          Sources: GA4, Google Ads, performance_summary
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>window.__CHARTS__ = {"weeklyPerformance": {"data": {"datasets": [{"backgroundColor": "#00477E", "borderColor": "#00477E", "borderWidth": 2.5, "data": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "fill": false, "label": "Leads", "pointRadius": 2, "tension": 0.3, "yAxisID": "y1"}, {"backgroundColor": "#C5D8EC", "borderColor": "#C5D8EC", "borderDash": [4, 4], "borderWidth": 2, "data": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "fill": false, "label": "Spend ($)", "pointRadius": 2, "tension": 0.3, "yAxisID": "y2"}], "labels": ["W18", "W19", "W20", "W21", "W22", "W23", "W24", "W25", "W26", "W27", "W28", "W29", "W30", "W31"]}, "opts": {"dual": true, "legend": true, "y2_fmt": "money", "y_fmt": ""}, "type": "line"}};</script>
+  <script src="../static/charts.js"></script>
+
+</body>
+</html>
