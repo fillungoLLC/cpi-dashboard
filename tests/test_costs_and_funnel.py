@@ -289,3 +289,51 @@ def test_exclusion_is_disclosed_not_silent():
 def test_no_exclusion_rules_is_a_passthrough():
     raw = _ads()
     assert exclude_campaigns.run(raw, {"transforms": []}) is raw
+
+
+# -----------------------------------------------------------------------------
+# Empty performance_summary must not publish
+# -----------------------------------------------------------------------------
+def test_blank_performance_summary_is_a_hard_error():
+    """The near-miss: a blank performance_summary tab still carries the right
+    columns, so ingestion passes, attribution degrades to 'unavailable', every
+    market reports 0 new patients, and ROI is -100% everywhere. All four
+    original output checks passed on that state."""
+    from checks import output_checks
+
+    kpis = {"meta": {"reporting_period": "2026-07"},
+            "overview": {"online_new_patients": 0.0, "all_in_cost": 48720.0,
+                         "cost_per_online_new_patient": None, "roi": -1.0}}
+    attributed = pd.DataFrame([{"attribution_method": "unavailable"}])
+
+    result = output_checks.new_patients_present(kpis, attributed)
+    assert not result.passed
+    assert result.severity == "error"
+    assert "empty or missing" in result.detail
+
+
+def test_new_patients_present_passes_on_real_data():
+    from checks import output_checks
+    kpis = {"meta": {"reporting_period": "2026-07"},
+            "overview": {"online_new_patients": 1076.0, "all_in_cost": 48720.0}}
+    assert output_checks.new_patients_present(kpis, pd.DataFrame()).passed
+
+
+def test_zero_nps_with_zero_cost_is_not_an_error():
+    """A market with no spend and no patients is legitimately empty, not broken."""
+    from checks import output_checks
+    kpis = {"meta": {"reporting_period": "2026-07"},
+            "overview": {"online_new_patients": 0.0, "all_in_cost": 0.0}}
+    assert output_checks.new_patients_present(kpis, pd.DataFrame()).passed
+
+
+def test_rows_present_but_wrong_month_is_still_caught():
+    """performance_summary has April rows only, reporting month is July. The
+    row_count_min ingestion check can't see this; the output check must."""
+    from checks import output_checks
+    kpis = {"meta": {"reporting_period": "2026-07"},
+            "overview": {"online_new_patients": 0.0, "all_in_cost": 48720.0}}
+    attributed = pd.DataFrame([{"attribution_method": "proportional_from_online_leads"}])
+    result = output_checks.new_patients_present(kpis, attributed)
+    assert not result.passed
+    assert "no rows for 2026-07" in result.detail

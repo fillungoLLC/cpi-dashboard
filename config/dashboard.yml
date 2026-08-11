@@ -278,6 +278,9 @@ quality_checks:
     - source: performance_summary
       checks:
         - columns_present
+        # A blank tab still carries the right columns, so columns_present alone
+        # passes it through and every market ends up at 0 new patients.
+        - row_count_min: 1
         - new_patients_non_negative
         - market_in_allowlist
     - source: costs

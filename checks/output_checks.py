@@ -14,11 +14,48 @@ import pandas as pd
 def run_all(kpis: dict, attributed: pd.DataFrame, config: dict) -> list:
     """Run all output checks. Returns a list of CheckResults."""
     results = []
+    results.append(new_patients_present(kpis, attributed))
     results.append(roi_change_within_range(kpis))
     results.append(cost_per_np_positive(kpis))
     results.append(online_nps_lte_total_leads(kpis))
     results.append(self_referral_shares_sum_to_one(kpis))
     return results
+
+
+def new_patients_present(kpis: dict, attributed: pd.DataFrame) -> CheckResult:
+    """Refuse to publish a dashboard with no new patients but real cost.
+
+    The failure this exists for: the staging Sheet's performance_summary tab is
+    blank, or its rows don't cover the reporting month. Ingestion is happy (an
+    empty tab still carries the right columns), attribution silently degrades to
+    `unavailable`, every market reports 0 new patients, and ROI computes as
+    (0 * 3500 - cost) / cost = -100% across the board. Before this check, all
+    four output checks passed on that state — cost_per_np_positive returns
+    `info` when cost per NP is None, which is exactly what 0 new patients
+    produces — so a green-bannered, catastrophically wrong dashboard would
+    deploy to the public Pages URL.
+    """
+    overview = kpis.get("overview") or {}
+    nps = overview.get("online_new_patients") or 0
+    cost = overview.get("all_in_cost") or 0
+    if nps > 0 or cost <= 0:
+        return CheckResult(name="new_patients_present", passed=True, severity="error")
+
+    method = ""
+    if attributed is not None and not getattr(attributed, "empty", True) \
+            and "attribution_method" in attributed.columns:
+        method = str(attributed["attribution_method"].iloc[0])
+
+    reason = ("performance_summary is empty or missing"
+              if method == "unavailable"
+              else f"performance_summary has no rows for {kpis.get('meta', {}).get('reporting_period')}")
+    return CheckResult(
+        name="new_patients_present",
+        passed=False,
+        severity="error",
+        detail=f"0 new patients against ${cost:,.0f} of cost — {reason}. "
+               "Refusing to publish a -100% ROI dashboard.",
+    )
 
 
 def roi_change_within_range(kpis: dict) -> CheckResult:
